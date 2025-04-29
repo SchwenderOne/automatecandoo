@@ -15,18 +15,52 @@ interface HotelData {
 }
 
 function cleanPrice(priceText: string): string {
-  // Standardize the price format
-  const price = priceText
+  // Entferne alle nicht relevanten Zeichen (außer Zahlen, Kommas, Punkte und €-Symbol)
+  let price = priceText
     .replace(/[^\d,.€]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   
-  // Make sure it has the € symbol and "ab" prefix if missing
-  if (!price.includes('ab') && /\d/.test(price)) {
-    return `ab ${price.includes('€') ? price : price + ' €'}`;
+  // Überprüfe, ob wir überhaupt eine Zahl haben
+  if (!/\d/.test(price)) {
+    return price; // Keine Zahl gefunden, gib den bereinigten Text zurück
   }
   
-  return price.includes('€') ? price : price + ' €';
+  // Normalisiere das Zahlenformat für deutsche Preise (1.234,56 €)
+  // 1. Wenn wir ein Format wie 1234.56 haben, wandle es zu 1234,56 um
+  if (price.includes('.') && !price.includes(',')) {
+    const parts = price.split('.');
+    if (parts.length === 2 && parts[1].length <= 2) {
+      // Sieht aus wie ein Dezimalpunkt
+      price = parts[0] + ',' + parts[1];
+    } else {
+      // Tausender-Trennzeichen - entfernen
+      price = price.replace(/\./g, '');
+    }
+  }
+  
+  // 2. Füge Tausender-Trennzeichen hinzu, wenn nötig
+  if (price.includes(',')) {
+    const parts = price.split(',');
+    if (parts[0].length > 3) {
+      // Zahlen mit mehr als 3 Stellen vor dem Komma
+      const wholePart = parts[0];
+      let formattedWholePart = '';
+      for (let i = wholePart.length - 1, count = 0; i >= 0; i--, count++) {
+        if (count > 0 && count % 3 === 0) {
+          formattedWholePart = '.' + formattedWholePart;
+        }
+        formattedWholePart = wholePart[i] + formattedWholePart;
+      }
+      price = formattedWholePart + ',' + parts[1];
+    }
+  }
+  
+  // Stelle sicher, dass das €-Symbol korrekt formatiert ist
+  price = price.includes('€') ? price : price + ' €';
+  
+  // Füge "ab" hinzu, wenn es nicht vorhanden ist (typisch für Hotelpreise)
+  return price.toLowerCase().includes('ab') ? price : `ab ${price}`;
 }
 
 export async function scrapeHotelData(url: string): Promise<HotelData | null> {
@@ -111,44 +145,154 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
       }
     }
     
-    // Extract price - look for price elements
+    // Extract price - look for price elements with multiple strategies
     let price: string | undefined;
-    $('[class*="price"], .price, .total-price, .offer-price, .rate-price, [class*="Price"]').each((_, el) => {
+    
+    // Strategie 1: Suche nach speziellen Preis-Elementen
+    $('[class*="price"], .price, .total-price, .offer-price, .rate-price, [class*="Price"], [class*="preis"]').each((_, el) => {
       const text = $(el).text().trim();
-      if (text && text.includes('€') && !price) {
-        price = text.replace(/[^\d,.€]+/g, ' ').trim();
+      if (text && text.includes('€') && /\d/.test(text) && !price) {
+        price = cleanPrice(text);
         return false;
       }
     });
     
-    // If still no price, try to find it in the page content
+    // Strategie 2: Suche nach Preismustern im gesamten Text
     if (!price) {
-      // Look for text with € symbol and numbers
-      const priceRegex = /ab\s*(\d+[\.,]?\d*)\s*€|(\d+[\.,]?\d*)\s*€\s*p\.P\./i;
+      // Verschiedene Preismuster abdecken
+      const priceRegexPatterns = [
+        /ab\s*(\d+[\.,]?\d*)\s*€/i,                  // ab 799 €
+        /(\d+[\.,]?\d*)\s*€\s*p\.P\./i,               // 799 € p.P.
+        /preis\s*:?\s*(\d+[\.,]?\d*)\s*€/i,          // Preis: 799 €
+        /(\d+[\.,]?\d*)\s*€\s*pro\s*Person/i,        // 799 € pro Person
+        /(\d+[\.,]?\d*)\s*€\s*(\/|pro)\s*Nacht/i,    // 799 € pro Nacht oder 799 € / Nacht
+        /(\d+[\.,]?\d*)\s*€\s*(\/|pro)\s*Zimmer/i    // 799 € pro Zimmer oder 799 € / Zimmer
+      ];
+      
       const bodyText = $('body').text();
-      const priceMatch = bodyText.match(priceRegex);
-      if (priceMatch) {
-        price = `ab ${priceMatch[1] || priceMatch[2]} €`;
+      
+      for (const regex of priceRegexPatterns) {
+        const priceMatch = bodyText.match(regex);
+        if (priceMatch && priceMatch[1]) {
+          // Versuche, einen kompletten Preis zu extrahieren
+          const priceText = priceMatch[0].trim();
+          price = cleanPrice(priceText);
+          break;
+        }
       }
     }
     
-    // Extract duration
+    // Strategie 3: Intelligente Analyse von kurzen Text-Blöcken mit €-Symbol
+    if (!price) {
+      // Suche nach kurzen Text-Elementen, die das €-Symbol und Zahlen enthalten
+      $('p, div, span').each((_, el) => {
+        const text = $(el).text().trim();
+        // Nur kurze Texte betrachten, die wahrscheinlich nur Preisangaben sind
+        if (text && text.length < 50 && text.includes('€') && /\d/.test(text) && !price) {
+          // Prüfe, ob dieser Text relevanter erscheint als reine Navigations- oder UI-Elemente
+          if (!text.toLowerCase().includes('suchen') && 
+              !text.toLowerCase().includes('buchen') && 
+              !text.toLowerCase().includes('anmelden')) {
+            price = cleanPrice(text);
+            return false;
+          }
+        }
+      });
+    }
+    
+    // Wenn immer noch kein Preis gefunden wurde, aber ein Preis im Text erwähnt wird
+    if (!price) {
+      // Suche nach einer beliebigen Zahl gefolgt von €
+      const simpleRegex = /(\d+[\.,]?\d*)\s*€/;
+      const bodyText = $('body').text();
+      const simpleMatch = bodyText.match(simpleRegex);
+      if (simpleMatch && simpleMatch[1]) {
+        price = cleanPrice(`${simpleMatch[1]} €`);
+      }
+    }
+    
+    // Extract duration - verbesserte Strategie
     let duration: string | undefined;
-    $('[class*="duration"], .stay-duration, .travel-duration, [class*="Duration"]').each((_, el) => {
+    
+    // Strategie 1: Suche nach speziellen Dauer-Elementen
+    $('[class*="duration"], .stay-duration, .travel-duration, [class*="Duration"], [class*="dauer"], [class*="aufenthalt"]').each((_, el) => {
       const text = $(el).text().trim();
-      if (text && (text.includes('Tag') || text.includes('Nacht') || text.includes('Übernacht'))) {
-        duration = text;
+      if (text && 
+          (text.includes('Tag') || text.includes('Nacht') || text.includes('Übernacht') || text.includes('ÜN')) && 
+          /\d/.test(text)) {
+        duration = text
+          .replace(/\s+/g, ' ')  // Normalisiere Whitespace
+          .replace(/(\d+)\s*x/i, '$1')  // "3x Übernachtungen" -> "3 Übernachtungen"
+          .trim();
         return false;
       }
     });
     
-    // If still no duration, try to find it in text
+    // Strategie 2: Suche nach Dauermustern im Text mit verschiedenen Varianten
     if (!duration) {
-      const durationRegex = /(\d+)\s*(?:Tage|Nächte|Übernachtungen|ÜN)/i;
+      const durationPatterns = [
+        /(\d+)\s*(?:Tage|Nächte|Übernachtungen|ÜN|Nacht)/i,
+        /(?:Aufenthalt|Dauer)\s*:?\s*(\d+)\s*(?:Tage|Nächte|Übernachtungen|Tag|Nacht)/i,
+        /(\d+)[-\s]Tages[-\s]Reise/i,
+        /(\d+)[-\s]Tage[-\s]Angebot/i
+      ];
+      
       const bodyText = $('body').text();
-      const durationMatch = bodyText.match(durationRegex);
-      if (durationMatch) {
-        duration = `${durationMatch[1]} Tage`;
+      
+      for (const pattern of durationPatterns) {
+        const match = bodyText.match(pattern);
+        if (match && match[1]) {
+          const days = parseInt(match[1], 10);
+          if (days > 0 && days < 31) { // Plausibilitätsprüfung
+            // Bestimme die richtige Einheit basierend auf dem gefundenen Text
+            let unit = 'Tage';
+            if (match[0].toLowerCase().includes('nacht') || match[0].toLowerCase().includes('übernacht') || match[0].toLowerCase().includes('ün')) {
+              unit = days === 1 ? 'Nacht' : 'Nächte';
+            }
+            
+            duration = `${days} ${unit}`;
+            break;
+          }
+        }
+      }
+    }
+    
+    // Strategie 3: Suche nach An- und Abreisedatum und berechne Differenz
+    if (!duration) {
+      // Suche nach An- und Abreisedatum im Format DD.MM.YYYY oder YYYY-MM-DD
+      const dateRegex = /(?:Anreise|Check-in)[:;\s]+(\d{1,2}\.\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2}).*?(?:Abreise|Check-out)[:;\s]+(\d{1,2}\.\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2})/i;
+      const bodyText = $('body').text();
+      const dateMatch = bodyText.match(dateRegex);
+      
+      if (dateMatch && dateMatch[1] && dateMatch[2]) {
+        try {
+          // Parse the dates
+          let startDate, endDate;
+          
+          if (dateMatch[1].includes('.')) {
+            // DD.MM.YYYY Format
+            const [day, month, year] = dateMatch[1].split('.').map(Number);
+            startDate = new Date(year, month - 1, day);
+            
+            const [endDay, endMonth, endYear] = dateMatch[2].split('.').map(Number);
+            endDate = new Date(endYear, endMonth - 1, endDay);
+          } else {
+            // YYYY-MM-DD Format
+            startDate = new Date(dateMatch[1]);
+            endDate = new Date(dateMatch[2]);
+          }
+          
+          // Calculate difference in days
+          const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays > 0 && diffDays < 31) { // Plausibilitätsprüfung
+            duration = `${diffDays} ${diffDays === 1 ? 'Tag' : 'Tage'}`;
+          }
+        } catch (error) {
+          console.error("Error parsing dates:", error);
+          // Continue with other strategies
+        }
       }
     }
     
@@ -515,8 +659,114 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
         error.message.includes('status code 5'))) {
       console.log("Retrying with fallback method...");
       try {
-        // Implement fallback scraping logic here
-        return null;
+        // Fallback: Versuche mit einem anderen User-Agent
+        const response = await axios.get(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15",
+            "Accept": "text/html,application/xhtml+xml,application/xml",
+            "Accept-Language": "de-DE,de;q=0.9",
+          },
+          timeout: 15000, // Längerer Timeout für Fallback
+        });
+        
+        if (!response || !response.data) {
+          throw new Error("Fallback request failed: No data received");
+        }
+        
+        // Sehr einfacher Fallback-Parser für absolute Mindestinformationen
+        const $ = cheerio.load(response.data);
+        
+        // Extrahiere Hotel-Name (mindestens)
+        const hotelName = $('h1').first().text().trim() || 
+                         $('title').text().split('|')[0].trim() || 
+                         "Hotel";
+        
+        // Versuche, die Destination zu extrahieren
+        let destination = "";
+        // Aus URL extrahieren als Fallback
+        const urlParts = url.split('/');
+        for (const part of urlParts) {
+          if (part && part.length > 3 && 
+              !part.includes('hotel') && 
+              !part.includes('meinreisebuero') && 
+              !part.includes('www') && 
+              !part.includes('http') && 
+              !part.includes('.com') && 
+              !part.includes('.de')) {
+            destination = part.replace(/-/g, ' ');
+            break;
+          }
+        }
+        
+        // Formatiere Destination
+        destination = destination
+          ? destination.charAt(0).toUpperCase() + destination.slice(1).toLowerCase()
+          : "Reiseziel";
+          
+        // Extrahiere mindestens 2 grundlegende Features aus dem Text
+        const features: string[] = [];
+        const bodyText = $('body').text();
+        
+        // Suche nach bekannten Feature-Keyworks
+        const featureKeywords = ['pool', 'strand', 'meer', 'frühstück', 'restaurant', 'spa', 'wellness',
+                             'zentral', 'aussicht', 'blick', 'kinder', 'suite', 'bar'];
+                             
+        for (const keyword of featureKeywords) {
+          // Finde Sätze, die das Keyword enthalten
+          const regex = new RegExp(`[^.!?]*${keyword}[^.!?]*[.!?]`, 'i');
+          const match = bodyText.match(regex);
+          
+          if (match && match[0] && match[0].length > 10 && match[0].length < 100) {
+            // Bereinige und kürze den Feature-Text
+            const feature = match[0].trim()
+              .replace(/^[^a-zA-Z0-9äöüÄÖÜß]+/, '') // Entferne führende Nicht-Buchstaben
+              .replace(/\s+/g, ' '); // Normalisiere Leerzeichen
+              
+            if (!features.includes(feature)) {
+              features.push(feature);
+            }
+            
+            if (features.length >= 3) break;
+          }
+        }
+        
+        // Wenn wir nicht genug Features gefunden haben, füge generische hinzu
+        if (features.length < 2) {
+          if (!features.includes("Komfortable Zimmer")) {
+            features.push("Komfortable Zimmer");
+          }
+          if (!features.includes("Zentrale Lage")) {
+            features.push("Zentrale Lage");
+          }
+        }
+        
+        // Generiere passende Icons
+        const featureIcons = features.map(feature => {
+          const lowerFeature = feature.toLowerCase();
+          if (lowerFeature.includes('pool')) return '🏊‍♀️';
+          if (lowerFeature.includes('strand') || lowerFeature.includes('meer')) return '🏖️';
+          if (lowerFeature.includes('frühstück') || lowerFeature.includes('restaurant')) return '🍽️';
+          if (lowerFeature.includes('spa') || lowerFeature.includes('wellness')) return '💆‍♂️';
+          if (lowerFeature.includes('lage') || lowerFeature.includes('zentral')) return '📍';
+          if (lowerFeature.includes('aussicht') || lowerFeature.includes('blick')) return '🌇';
+          if (lowerFeature.includes('zimmer')) return '🛏️';
+          return '✓';
+        });
+        
+        console.log(`Fallback extraction successful for ${hotelName}`);
+        
+        return {
+          hotelName,
+          hotelCategory: undefined,
+          destination,
+          features,
+          featureIcons,
+          amenities: [],
+          description: undefined,
+          imageUrl: undefined,
+          price: undefined,
+          duration: undefined
+        };
       } catch (fallbackError) {
         console.error("Fallback scraping also failed:", fallbackError);
         return null;
