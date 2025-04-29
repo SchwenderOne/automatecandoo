@@ -6,6 +6,7 @@ import { scrapeHotelData } from "./services/scraper";
 import { generateWhatsAppPost } from "./services/gemini";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { cache } from "./services/cache";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Generate WhatsApp post from travel offer URL
@@ -30,13 +31,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Scrape hotel data from the provided URL
-      const hotelData = await scrapeHotelData(url);
+      // Cache-Schlüssel generieren
+      const cacheKey = `post:${url}:${useEmojis}:${style}`;
+      
+      // Versuche, aus dem Cache zu laden
+      const cachedResponse = cache.get<any>(cacheKey);
+      if (cachedResponse) {
+        console.log(`Cache hit für URL: ${url}`);
+        return res.status(200).json(cachedResponse);
+      }
+      
+      console.log(`Cache miss für URL: ${url}, generiere neuen Post...`);
+      
+      // Versuche separates Caching für die gescrapten Daten
+      const scrapeCacheKey = `scrape:${url}`;
+      let hotelData = cache.get<any>(scrapeCacheKey);
       
       if (!hotelData) {
-        return res.status(404).json({
-          message: "Konnte keine Informationen von der angegebenen URL extrahieren",
-        });
+        // Scrape hotel data from the provided URL
+        hotelData = await scrapeHotelData(url);
+        
+        if (!hotelData) {
+          return res.status(404).json({
+            message: "Konnte keine Informationen von der angegebenen URL extrahieren",
+          });
+        }
+        
+        // Cache die Scraping-Ergebnisse mit längerer TTL (24h)
+        cache.set(scrapeCacheKey, hotelData, 24 * 60 * 60);
       }
 
       // Generate WhatsApp post using Gemini AI
@@ -46,10 +68,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Prepare features with icons
-      const featuresWithIcons = hotelData.features.map((feature, index) => ({
+      const featuresWithIcons = hotelData.features.map((feature: string, index: number) => ({
         icon: hotelData.featureIcons?.[index] || "✓",
         text: feature
       }));
+
+      // Erstelle die Antwort
+      const responseData = {
+        generatedPost: generatedPost,
+        originalPost: generatedPost,
+        sourceInfo: {
+          hotelName: hotelData.hotelName,
+          hotelCategory: hotelData.hotelCategory,
+          destination: hotelData.destination,
+          featuresWithIcons: featuresWithIcons,
+          customSections: [], // Initial leer
+          originalUrl: url
+        }
+      };
+      
+      // Cache die Antwort mit einer TTL von 6 Stunden
+      cache.set(cacheKey, responseData, 6 * 60 * 60);
 
       // Speichere den Post in der Datenbank
       const [savedPost] = await db.insert(postGenerations).values({
@@ -65,18 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).returning();
 
       // Return generated post along with extracted source information
-      return res.status(200).json({
-        generatedPost: generatedPost,
-        originalPost: generatedPost,
-        sourceInfo: {
-          hotelName: hotelData.hotelName,
-          hotelCategory: hotelData.hotelCategory,
-          destination: hotelData.destination,
-          featuresWithIcons: featuresWithIcons,
-          customSections: [], // Initial leer
-          originalUrl: url
-        }
-      });
+      return res.status(200).json(responseData);
     } catch (error) {
       console.error("Error generating post:", error);
       
@@ -109,6 +137,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!existingPost) {
         return res.status(404).json({
           message: "Post nicht gefunden"
+        });
+      }
+      
+      // Cache-Einträge für die URL invalidieren
+      if (existingPost.sourceUrl) {
+        // Alle möglichen Cache-Schlüssel für die URL entfernen
+        const url = existingPost.sourceUrl;
+        console.log(`Invalidiere Cache-Einträge für URL: ${url}`);
+        
+        // Entferne Scrape-Cache
+        cache.delete(`scrape:${url}`);
+        
+        // Entferne Post-Caches für alle Style- und Emoji-Kombinationen
+        ['true', 'false'].forEach(emojis => {
+          ['enthusiastic', 'elegant', 'family', 'adventure'].forEach(style => {
+            cache.delete(`post:${url}:${emojis}:${style}`);
+          });
         });
       }
       
@@ -162,6 +207,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!existingPost) {
         return res.status(404).json({
           message: "Post nicht gefunden"
+        });
+      }
+      
+      // Cache-Einträge für die URL invalidieren, da sich der Inhalt ändert
+      if (existingPost.sourceUrl) {
+        // Alle möglichen Cache-Schlüssel für die URL entfernen
+        const url = existingPost.sourceUrl;
+        console.log(`Invalidiere Cache-Einträge für URL (Custom Section): ${url}`);
+        
+        // Entferne Post-Caches für alle Style- und Emoji-Kombinationen
+        ['true', 'false'].forEach(emojis => {
+          ['enthusiastic', 'elegant', 'family', 'adventure'].forEach(style => {
+            cache.delete(`post:${url}:${emojis}:${style}`);
+          });
         });
       }
       

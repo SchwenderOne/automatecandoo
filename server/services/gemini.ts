@@ -152,17 +152,144 @@ function getGeminiApi() {
   return new GoogleGenerativeAI(apiKey);
 }
 
+// Few-Shot-Beispiele für verschiedene Stile
+const getFewShotExamples = (style: string): string => {
+  // Beispiele für verschiedene Stile
+  const examples: Record<string, string[]> = {
+    enthusiastic: [
+      `☀️ Traumurlaub auf Mallorca - Nur 799€! 🇪🇸
+Hotel Paradiso - dein 4-Sterne Hotel direkt am Strand!
+
+🏖️ Direkt am traumhaften Sandstrand gelegen
+🍽️ All-Inclusive-Verpflegung mit mediterranen Spezialitäten
+🏊‍♀️ Großzügige Poollandschaft mit Swim-up-Bar
+👨‍👩‍👧‍👦 Vielfältiges Unterhaltungsprogramm für die ganze Familie
+🧖‍♀️ Wellnessbereich mit Sauna und Massage-Anwendungen
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Dein Sommermärchen wartet - Pack die Koffer und los! ✨
+➡️ Jetzt schnell sichern, bevor die besten Plätze weg sind!`,
+
+      `🌴 Bali ruft! Tropisches Paradies ab nur 1.099€! 🇮🇩
+Sunset Beach Resort - dein 5-Sterne Traumhotel auf Bali!
+
+🌊 Atemberaubender Meerblick aus jedem Zimmer
+🍹 2 exotische Restaurants & 3 stilvolle Bars
+🏊‍♀️ Infinity-Pool mit Blick auf den Ozean
+💆‍♂️ Traditionelle balinesische Spa-Behandlungen
+🚣‍♀️ Kostenlose Wassersportaktivitäten inklusive
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Erlebe den Zauber der Insel der Götter! ✨
+➡️ Jetzt deine Auszeit im Paradies buchen!`
+    ],
+    elegant: [
+      `✨ Exklusiver Aufenthalt an der Amalfiküste - ab 1.290€ 🇮🇹
+Villa Belvedere - Ihr distinguiertes 5-Sterne Hideaway in Positano
+
+🌇 Privilegierte Lage mit spektakulärem Panoramablick
+🍽️ Preisgekröntes Restaurant mit mediterraner Gourmetküche
+🍷 Exquisite Weinverkostungen in historischem Gewölbekeller
+🛏️ Elegant gestaltete Suiten mit privaten Terrassen
+🧖‍♀️ Exklusiver Spa-Bereich mit maßgeschneiderten Anwendungen
+
+💳 Und wie immer bei uns: Sie buchen jetzt – und zahlen später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Erleben Sie italienische Lebenskunst in ihrer vollendeten Form ✨
+➡️ Sichern Sie sich Ihren Aufenthalt in einem der begehrtesten Refugien Italiens`,
+
+      `🌺 Diskreter Luxus auf Mauritius - Premium-Suite ab 1.890€ 🇲🇺
+Royal Palm Beachcomber - Ihr exquisites 5-Sterne Luxusresort
+
+🏝️ Privilegierte Lage an einem der schönsten Strände der Insel
+👨‍🍳 Kulinarische Meisterwerke des Sternekochs Michel Laurent
+🛥️ Privater Jachtausflug zu den Nachbarinseln inklusive
+🧖‍♀️ Preisgekrönter Spa mit Clarins-Treatments
+🍸 Erlesene Cocktailkreationen in der Royal Sunset Lounge
+
+💳 Und wie immer bei uns: Sie buchen jetzt – und zahlen später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Ein Ort zeitloser Eleganz für den distinguierten Reisenden ✨
+➡️ Reservieren Sie jetzt Ihren Aufenthalt in diskreter Exklusivität`
+    ],
+    family: [
+      `🌞 Familienurlaub in der Türkei - All-Inclusive ab 899€! 🇹🇷
+SunnyBeach Family Resort - euer kinderfreundliches 4-Sterne Hotel in Antalya
+
+👨‍👩‍👧‍👦 Großzügige Familienzimmer mit getrennten Kinderbereichen
+🎡 Wasserspielplatz und Kinderclub mit täglichem Programm (3-12 Jahre)
+🍦 Kinderfreundliches Buffet mit gesunden Optionen
+🏊‍♀️ Kinderbecken mit Wasserrutschen und Spritztieren
+🎭 Abendliche Familienunterhaltung und Mini-Disco
+
+💳 Und wie immer bei uns: Ihr bucht jetzt – und zahlt später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Glückliche Kinder, entspannte Eltern - Urlaub wie er sein soll! ✨
+➡️ Jetzt euren perfekten Familienurlaub planen und gemeinsam Erinnerungen schaffen!`
+    ],
+    adventure: [
+      `🏔️ Abenteuer in Costa Rica - 14 Tage ab 1.299€! 🇨🇷
+Jungle Explorer Lodge - dein außergewöhnliches Naturresort im Regenwald
+
+🌋 Spektakuläre Lage zwischen Vulkan Arenal und Nebelwald
+🦥 Geführte Wildlife-Touren mit Chancen auf Faultiere, Tukane & mehr
+🧗‍♂️ Zip-Lining und Canyoning-Abenteuer inklusive
+🚣‍♀️ Wildwasser-Rafting auf dem Rio Pacuare (Klasse III-IV)
+🌿 Nachhaltig gebaute Eco-Lodges mit Panorama-Regenwaldsicht
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Das Abenteuer deines Lebens wartet im Herzen des Regenwalds! ✨
+➡️ Schnapp dir deinen Rucksack und erlebe die pure Kraft der Natur!`
+    ]
+  };
+
+  // Wähle 1-2 Beispiele für den ausgewählten Stil
+  const selectedExamples = examples[style] || examples.enthusiastic;
+  return selectedExamples.slice(0, 2).join('\n\n--- WEITERES BEISPIEL ---\n\n');
+};
+
+// Dynamische Temperatur-Einstellung je nach Stil
+const getTemperatureForStyle = (style: string): number => {
+  switch (style) {
+    case "enthusiastic": return 0.8;  // Kreativere Texte für begeisterten Stil
+    case "elegant": return 0.6;       // Kontrollierter für eleganten Stil
+    case "family": return 0.7;        // Ausgewogen für Familienstil
+    case "adventure": return 0.75;    // Etwas kreativer für abenteuerlustigen Stil
+    default: return 0.7;              // Standard
+  }
+};
+
 export async function generateWhatsAppPost(hotelData: HotelData, options: GenerationOptions): Promise<string> {
   try {
     const genAI = getGeminiApi();
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-    
-    // Die aktuellste Gemini-Version verwendet eine andere Methode für Safety Settings
-    // Wir entfernen sie vorerst, damit die API richtig funktioniert
-    
-    // Wir verwenden die globalen Hilfsfunktionen
-    
-    // Wir verwenden die globalen Definitionen von featureEmojiMap und styleDescriptions
     
     // Create enhanced features with emojis if enabled
     const enhancedFeatures = hotelData.features.map((feature, index) => {
@@ -177,10 +304,8 @@ export async function generateWhatsAppPost(hotelData: HotelData, options: Genera
     
     // Vereinfache die Destination - entferne Duplikate und kürze zu lange Destination
     let cleanDestination = hotelData.destination;
-    // Entferne Duplikate wie "Paris, Paris" oder "Paris & Umgebung, Paris"
     if (cleanDestination.includes(',') || cleanDestination.includes('&')) {
       const parts = cleanDestination.split(/[,&]/);
-      // Manuelle Deduplizierung statt Set (wegen TypeScript-Konfiguration)
       const uniqueParts: string[] = [];
       parts.forEach(part => {
         const trimmed = part.trim();
@@ -190,13 +315,34 @@ export async function generateWhatsAppPost(hotelData: HotelData, options: Genera
       });
       cleanDestination = uniqueParts.join(', ');
     }
+    
+    // Füge Few-Shot-Beispiele hinzu
+    const fewShotExamples = getFewShotExamples(options.style);
 
+    // Verbesserter System-Prompt
+    const systemPrompt = `
+Du bist ein erstklassiger WhatsApp-Marketing-Texter für Reiseangebote der Firma ucandoo.
+Deine Aufgabe ist es, einen präzisen, ansprechenden WhatsApp-Post im vorgegebenen Format zu erstellen,
+der ${styleDescriptions[options.style]}
+
+WICHTIG - Folgendes muss EXAKT so in dem Post enthalten sein:
+1. Der genaue Hotelname: "${hotelData.hotelName}"
+2. Die genaue Destination: "${cleanDestination}"
+3. Der exakte Preis (wenn vorhanden): "${hotelData.price || ""}"
+4. Die exakten Merkmale des Hotels (nutze genau die angegebenen, erfinde keine)
+5. Die exakte ucandoo-Zahlungsinfos: "Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo"
+6. Die exakten 3 Links: "Jetzt buchen", "Ratenrechner", "Reisebüro finden"
+
+VERBOTEN im Post:
+- Telefonnummern, E-Mail-Adressen oder Internetadressen
+- Fehlermeldungen oder "keine Ergebnisse", "leider nicht verfügbar" etc.
+- Platzhalter wie [TEXT] oder ähnliches
+- Zusätzliche Links oder CTAs außer den vorgegebenen
+- Website-Navigation wie "Impressum", "Startseite" etc.
+`;
+
+    // Verbesserter Haupt-Prompt
     const prompt = `
-Du bist ein erfahrener WhatsApp-Marketing-Texter für Reiseangebote der Firma ucandoo. 
-Du sollst einen attraktiven WhatsApp-Post im vorgegebenen Format erstellen.
-
-WICHTIG: Folge EXAKT diesem Format, das ich dir gleich zeige. Keine Abweichungen!
-
 Hier sind die Informationen zum Reiseangebot:
 - Hotelname: ${hotelData.hotelName}
 - Kategorie: ${hotelData.hotelCategory || "Luxuriöses Hotel"}
@@ -207,12 +353,10 @@ ${hotelData.duration ? `- Dauer: ${hotelData.duration}` : ''}
 ${hotelData.features.map(f => "  * " + f).join("\n")}
 ${hotelData.description ? `- Beschreibung: ${hotelData.description}` : ""}
 
-Bitte erstelle einen WhatsApp-Post, der ${styleDescriptions[options.style]}
-
 EXAKTES FORMAT für den Post:
 1. Beginne mit einer catchy Headline, die Destination und Hotel nennt. Erwähne den Preis, wenn bekannt.
-2. Dann 4-5 Bullet Points mit den Hauptmerkmalen (Nutze NUR die gegebenen Merkmale, keine Internet-Links, Telefonnummern oder Kontaktdaten)
-3. Dann eine Zeile, die darauf hinweist, dass man mit ucandoo jetzt buchen und später zahlen kann
+2. Dann 4-5 Bullet Points mit den Hauptmerkmalen 
+3. Dann die Zeile mit dem ucandoo-Bezahlhinweis: "💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo."
 4. Dann die folgenden 3 Links exakt so formatiert:
    👉 Jetzt buchen
    👉 Ratenrechner
@@ -231,41 +375,122 @@ ${enhancedFeatures.join("\n")}
 👉 Ratenrechner
 👉 Reisebüro finden
 
-✨ [Catchy Schlussstatement] ✨
-➡️ [Call-to-Action]
+✨ Dein Traumurlaub wartet – Sonne, Strand und pure Erholung! ✨
+➡️ Schnell buchen und Koffer packen!
 
-WICHTIG:
-- Verwende den exakten Hotelname und die exakte Destination
-- Behalte die genaue Formatierung des Beispiels bei
-- Behalte die exakten ucandoo-Bezahlhinweise bei
-- Behalte die exakten 3 Links bei
-- Benutze keine PlaceholderTexte wie [Catchy Schlussstatement], sondern kreative eigene Formulierungen
-- Verwende KEINE ANDEREN LINKS oder CTAs als die vorgegebenen
-- Verwende KEINE Kontaktdaten wie Telefonnummern, E-Mail-Adressen oder Straßennamen in den Hauptmerkmalen
-- Verwende KEINE Parameter oder Begriffe wie "Reiseland GmbH" oder "Diese Seite wirklich verlassen" in den Hauptmerkmalen
-- Verwende KEINE Fehlermeldungen oder Texte wie "keine Angebote verfügbar" in den Hauptmerkmalen
-- Erwähne nicht, wenn etwas fehlt - sage nie "leider" oder "keine Ergebnisse" oder ähnliches
-- Gib nur den fertigen Post zurück, keine Erklärungen
+Hier sind erfolgreiche Beispiele als Inspiration:
+
+${fewShotExamples}
+
+Erstelle nun einen neuen originellen Post im gleichen Format für das angegebene Hotel!
 `;
 
+    // Dynamische Temperature basierend auf dem Stil
+    const temperature = getTemperatureForStyle(options.style);
+
     const generationConfig = {
-      temperature: 0.7,
+      temperature,
       topK: 40,
       topP: 0.95,
       maxOutputTokens: 1000,
     };
 
+    // Erste Anfrage mit systemPrompt
     const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: [
+        { role: "system", parts: [{ text: systemPrompt }] },
+        { role: "user", parts: [{ text: prompt }] }
+      ],
       generationConfig,
     });
 
     const response = result.response;
-    const generatedText = response.text();
+    let generatedText = response.text().trim();
     
-    return generatedText.trim();
+    // Validiere den generierten Text
+    if (!validateGeneratedPost(generatedText, hotelData)) {
+      console.log("Erster Generierungsversuch enthielt nicht alle erforderlichen Elemente. Versuche es erneut mit angepasstem Prompt...");
+      
+      // Zweiter Versuch mit strikterem Prompt und weniger Kreativität
+      const strictPrompt = prompt + "\n\nWICHTIG: Stelle sicher, dass der Hotelname, die Destination und alle anderen Informationen korrekt enthalten sind. Halte dich EXAKT an das vorgegebene Format!";
+      
+      const secondResult = await model.generateContent({
+        contents: [
+          { role: "system", parts: [{ text: systemPrompt }] },
+          { role: "user", parts: [{ text: strictPrompt }] }
+        ],
+        generationConfig: {
+          ...generationConfig,
+          temperature: Math.max(0.3, temperature - 0.3), // Reduziere Kreativität
+        },
+      });
+      
+      generatedText = secondResult.response.text().trim();
+    }
+    
+    return generatedText;
   } catch (error) {
     console.error("Error with Gemini API:", error);
     throw new Error(`Fehler bei der Generierung mit Gemini: ${error instanceof Error ? error.message : "Unbekannter Fehler"}`);
   }
+}
+
+// Validierungsfunktion für generierte Posts
+function validateGeneratedPost(post: string, hotelData: HotelData): boolean {
+  // Überprüfe, ob alle erforderlichen Elemente im Post enthalten sind
+  const requiredElements = [
+    hotelData.hotelName,
+    hotelData.destination,
+    "ucandoo",
+    "Jetzt buchen",
+    "Ratenrechner",
+    "Reisebüro finden"
+  ];
+  
+  if (hotelData.price) {
+    requiredElements.push(hotelData.price.replace(/[€\s.,]/g, '').substring(0, 4)); // Preisprüfung relaxed
+  }
+  
+  // Überprüfe, ob alle erforderlichen Elemente enthalten sind
+  for (const element of requiredElements) {
+    const elementLC = element.toLowerCase();
+    const postLC = post.toLowerCase();
+    
+    if (!postLC.includes(elementLC)) {
+      console.warn(`Validierungsfehler: "${element}" fehlt im generierten Post`);
+      return false;
+    }
+  }
+  
+  // Überprüfe, ob keine verbotenen Elemente enthalten sind
+  const forbiddenPatterns = [
+    "nicht verfügbar",
+    "keine Angabe",
+    "leider",
+    "Fehler",
+    "@",
+    "http",
+    "www",
+    "[",
+    "]",
+    "Impressum",
+    "Datenschutz",
+    "Kontakt",
+    "+49",
+    "Tel",
+    "Telefon",
+    /\+\d{2,}/
+  ];
+  
+  for (const pattern of forbiddenPatterns) {
+    if (typeof pattern === 'string' && post.includes(pattern)) {
+      console.warn(`Validierungsfehler: Verbotener Inhalt "${pattern}" im generierten Post gefunden`);
+      return false;
+    } else if (pattern instanceof RegExp && pattern.test(post)) {
+      console.warn(`Validierungsfehler: Verbotenes Muster im generierten Post gefunden`);
+      return false;
+    }
+  }
+  
+  return true;
 }
