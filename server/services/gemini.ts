@@ -135,10 +135,10 @@ const getDestinationEmoji = (destination: string): string => {
 
 // Style-Beschreibungen für verschiedene Textstile
 const styleDescriptions = {
-  enthusiastic: "begeistert, energetisch und lebhaft. Verwende ausdrucksstarke Sprache und Ausrufezeichen, um Begeisterung zu vermitteln.",
-  elegant: "elegant, kultiviert und luxuriös. Verwende gehobene Sprache, die Exklusivität und Premium-Qualität betont.",
-  family: "familienfreundlich und warm. Betone Aspekte, die für Familien wichtig sind, wie Sicherheit, Komfort und Aktivitäten für Kinder.",
-  adventure: "abenteuerlich und aufregend. Betone die Möglichkeit für Erlebnisse, Entdeckungen und aktive Freizeitgestaltung."
+  enthusiastic: "einen begeisterten, energiegeladenen und motivierenden Ton hat. Nutze dynamische Ausdrücke, überraschende Wendungen und spritzige Wortwahl, um echte Begeisterung zu vermitteln.",
+  elegant: "einen eleganten, gehobenen und anspruchsvollen Ton hat. Verwende distinguierte Sprache, höfliche Anrede und kultivierte Ausdrucksweise, die gehobene Ansprüche respektiert.",
+  family: "einen herzlichen, familienfreundlichen und einladenden Ton hat. Betone Aspekte, die für Familien mit Kindern wichtig sind, wie Sicherheit, Kinderfreundlichkeit und gemeinsame Aktivitäten.",
+  adventure: "einen abenteuerlustigen, aufregenden und entdeckungsfreudigen Ton hat. Hebe Aktivitäten, Erlebnisse und die Möglichkeit zur Erkundung hervor, um Abenteuerlust zu wecken."
 };
 
 // Initialize Gemini API
@@ -191,7 +191,41 @@ Sunset Beach Resort - dein 5-Sterne Traumhotel auf Bali!
 👉 Reisebüro finden
 
 ✨ Erlebe den Zauber der Insel der Götter! ✨
-➡️ Jetzt deine Auszeit im Paradies buchen!`
+➡️ Jetzt deine Auszeit im Paradies buchen!`,
+
+      `🔥 TRAUMURLAUB ALERT! Paris erleben ab 599 € 🇫🇷
+Hôtel Les Jardins de Montmartre - dein stylisches Stadthotel im Herzen der Romantik!
+
+📍 Super Lage im kultigen Künstlerviertel Montmartre
+🥐 Köstliches französisches Frühstück mit Croissants & Café
+🛏️ Moderne, gemütliche Zimmer zum Entspannen
+🚶‍♀️ Alle Top-Sehenswürdigkeiten zu Fuß erreichbar
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Paris verzaubert dich - lass dich von der Stadt der Liebe verführen! ✨
+➡️ Bereit für dein französisches Abenteuer? Jetzt buchen!`,
+
+      `🌊 GRIECHENLAND-HAMMER! Santorini ab nur 799 € 🏝️
+Blue Bay Resort & Spa - dein traumhaftes 4-Sterne Hideaway mit MEGA-Meerblick!
+
+🌅 Atemberaubende Sonnenuntergänge direkt von deinem Balkon
+🍹 Infinity-Pool mit Cocktailbar und Blick aufs Mittelmeer
+🥙 Authentische griechische Küche mit frischen lokalen Zutaten
+💆‍♀️ Wellness & Spa-Bereich für pure Entspannung
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Dein perfekter Insel-Traumurlaub wartet! Opa! ✨
+➡️ Schnapp dir deinen Santorini-Deal, bevor jemand anders es tut!`
     ],
     elegant: [
       `✨ Exklusiver Aufenthalt an der Amalfiküste - ab 1.290€ 🇮🇹
@@ -228,7 +262,41 @@ Royal Palm Beachcomber - Ihr exquisites 5-Sterne Luxusresort
 👉 Reisebüro finden
 
 ✨ Ein Ort zeitloser Eleganz für den distinguierten Reisenden ✨
-➡️ Reservieren Sie jetzt Ihren Aufenthalt in diskreter Exklusivität`
+➡️ Reservieren Sie jetzt Ihren Aufenthalt in diskreter Exklusivität`,
+
+      `✨ Pariser Eleganz im Herzen von Montmartre 🇫🇷
+Hôtel Les Jardins de Montmartre - Ihr distinguiertes Refugium in der Stadt der Lichter
+
+🥐 Genießen Sie ein exquisites französisches Frühstück mit Patisserie-Spezialitäten
+🎨 Befinden Sie sich in unmittelbarer Nähe zu den berühmten Künstlerateliers
+🏛️ Erleben Sie kulturelle Höhepunkte wie den Sacré-Cœur in Gehentfernung
+🛏️ Residieren Sie in stilvoll eingerichteten Zimmern mit erlesener Ausstattung
+
+💳 Und wie immer bei uns: Sie buchen jetzt – und zahlen später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Paris – eine Symphonie für alle Sinne ✨
+➡️ Reservieren Sie Ihren exklusiven Aufenthalt in der französischen Metropole`,
+
+      `✨ Mediterrane Grandezza an der Costa del Sol 🌊
+Hotel Don Carlos Leisure Resort & Spa - Ihr exklusives 5-Sterne Domizil in Marbella
+
+🌿 Weitläufige, subtropische Gartenanlage mit jahrhundertealten Olivenbäumen
+🍷 Erstklassige Gastronomie mit exzellenter mediterraner und internationaler Küche
+🧖‍♀️ Luxuriöses Spa-Retreat mit Thalasso-Therapie und ganzheitlichen Treatments
+🏊‍♀️ Elegante Poollandschaft mit diskretem Service und Meerblick
+
+💳 Und wie immer bei uns: Sie buchen jetzt – und zahlen später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Marbella – wo Exklusivität und Lebensart verschmelzen ✨
+➡️ Sichern Sie sich Ihren perfekten Aufenthalt an Spaniens privilegierter Küste`
     ],
     family: [
       `🌞 Familienurlaub in der Türkei - All-Inclusive ab 899€! 🇹🇷
@@ -247,7 +315,41 @@ SunnyBeach Family Resort - euer kinderfreundliches 4-Sterne Hotel in Antalya
 👉 Reisebüro finden
 
 ✨ Glückliche Kinder, entspannte Eltern - Urlaub wie er sein soll! ✨
-➡️ Jetzt euren perfekten Familienurlaub planen und gemeinsam Erinnerungen schaffen!`
+➡️ Jetzt euren perfekten Familienurlaub planen und gemeinsam Erinnerungen schaffen!`,
+
+      `👨‍👩‍👧‍👦 Familienglück in Paris - Entdeckungsreise für alle! 🗼
+Hôtel Les Jardins de Montmartre - euer gemütliches Zuhause in Paris
+
+🚶‍♀️ Kinderfreundliche Spaziergänge durch das bunte Montmartre-Viertel
+🥐 Familienfreundliches Frühstück mit Spezialitäten für Groß und Klein
+🛌 Geräumige Familienzimmer mit ausreichend Platz zum Spielen
+🎭 In der Nähe von familienfreundlichen Attraktionen und Parks
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Paris mit Kindern erleben - aufregend, lehrreich und unvergesslich! ✨
+➡️ Packt die Koffer und macht euch bereit für ein Familienabenteuer in Paris!`,
+
+      `🌈 Familienspaß unter Griechenlands Sonne! 👨‍👩‍👧‍👦
+Aeolos Beach Resort - euer kinderfreundliches 4-Sterne Paradies auf Korfu
+
+🏊‍♀️ Mehrere Pools mit Kinderbecken und aufregendem Wasserpark
+🍕 Familien-Buffet mit Kinderecke und kindgerechten Essenszeiten
+👶 Professionelle Kinderbetreuung und Mini-Club für verschiedene Altersgruppen
+🏖️ Flach abfallender Sandstrand - ideal für Wasserspaß mit den Kleinen
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Urlaub, der die ganze Familie glücklich macht! ✨
+➡️ Jetzt buchen und gemeinsam griechische Familienabenteuer erleben!`
     ],
     adventure: [
       `🏔️ Abenteuer in Costa Rica - 14 Tage ab 1.299€! 🇨🇷
@@ -266,13 +368,50 @@ Jungle Explorer Lodge - dein außergewöhnliches Naturresort im Regenwald
 👉 Reisebüro finden
 
 ✨ Das Abenteuer deines Lebens wartet im Herzen des Regenwalds! ✨
-➡️ Schnapp dir deinen Rucksack und erlebe die pure Kraft der Natur!`
+➡️ Schnapp dir deinen Rucksack und erlebe die pure Kraft der Natur!`,
+
+      `🗼 PARIS ENTDECKEN - Vom Montmartre bis zum Untergrund! 🧭
+Hôtel Les Jardins de Montmartre - dein perfekter Ausgangspunkt für Stadterkundungen!
+
+🚶‍♀️ Erkunde versteckte Gassen und Street Art im authentischen Montmartre
+🏛️ Tour zu den verborgenen Katakomben und geheimen Orten der Stadt
+🚴‍♂️ Fahrradverleih direkt im Hotel für spontane Stadtabenteuer
+🍷 Weinverkostungen in historischen Kellern abseits der Touristenpfade
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Paris hat so viel mehr zu bieten als den Eiffelturm! ✨
+➡️ Bereit für dein urbanes Abenteuer? Jetzt loslegen!`,
+
+      `🌋 ABENTEUER TENERIFFA - Zwischen Vulkanen und Meer! 🏄‍♂️
+Sandos San Blas Nature Resort - deine ultimative Basis für Outdoor-Action!
+
+🥾 Direkter Zugang zu spektakulären Wanderwegen am Vulkan Teide
+🚣‍♀️ Kajak und Stand-Up-Paddling auf dem hoteleigenen Naturreservoir
+🚵‍♂️ Geführte Mountainbike-Touren durch beeindruckende Lavalandschaften
+🤿 Tauchbasis am Hotel für Erkundungen der faszinierenden Unterwasserwelt
+
+💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
+
+👉 Jetzt buchen
+👉 Ratenrechner
+👉 Reisebüro finden
+
+✨ Teneriffa - die Insel der 1000 Abenteuer wartet auf dich! ✨
+➡️ Bist du bereit für den ultimativen Adrenalinkick? Jetzt buchen!`
     ]
   };
 
-  // Wähle 1-2 Beispiele für den ausgewählten Stil
+  // Wähle 2-3 Beispiele für den ausgewählten Stil
   const selectedExamples = examples[style] || examples.enthusiastic;
-  return selectedExamples.slice(0, 2).join('\n\n--- WEITERES BEISPIEL ---\n\n');
+  // Zufällige Auswahl von 3 Beispielen (oder weniger, falls nicht genug vorhanden)
+  const shuffled = [...selectedExamples].sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, Math.min(3, shuffled.length));
+  return selected.join('\n\n--- WEITERES BEISPIEL ---\n\n');
 };
 
 // Dynamische Parametereinstellung je nach Stil und Kontext
