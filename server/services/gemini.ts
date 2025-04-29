@@ -160,11 +160,11 @@ const getFewShotExamples = (style: string): string => {
       `☀️ Traumurlaub auf Mallorca - Nur 799€! 🇪🇸
 Hotel Paradiso - dein 4-Sterne Hotel direkt am Strand!
 
-🏖️ Direkt am traumhaften Sandstrand gelegen
-🍽️ All-Inclusive-Verpflegung mit mediterranen Spezialitäten
-🏊‍♀️ Großzügige Poollandschaft mit Swim-up-Bar
-👨‍👩‍👧‍👦 Vielfältiges Unterhaltungsprogramm für die ganze Familie
-🧖‍♀️ Wellnessbereich mit Sauna und Massage-Anwendungen
+🏖️ Nur 150 m zum feinsandigen Playa de Palma Strand
+🍽️ 3 Restaurants mit mediterranen und internationalen Spezialitäten
+🏊‍♀️ 2 Swimmingpools (800 m² & 400 m²) mit Swim-up-Bar und Sonnenterrasse
+👨‍👩‍👧‍👦 Kids Club (4-12 Jahre) mit täglichem Animationsprogramm 
+🧖‍♀️ 600 m² Spa-Bereich mit beheiztem Hallenbad, 2 Saunen und 5 Behandlungsräumen
 
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
 
@@ -178,11 +178,11 @@ Hotel Paradiso - dein 4-Sterne Hotel direkt am Strand!
       `🌴 Bali ruft! Tropisches Paradies ab nur 1.099€! 🇮🇩
 Sunset Beach Resort - dein 5-Sterne Traumhotel auf Bali!
 
-🌊 Atemberaubender Meerblick aus jedem Zimmer
-🍹 2 exotische Restaurants & 3 stilvolle Bars
-🏊‍♀️ Infinity-Pool mit Blick auf den Ozean
-💆‍♂️ Traditionelle balinesische Spa-Behandlungen
-🚣‍♀️ Kostenlose Wassersportaktivitäten inklusive
+🌊 42 m² Deluxe-Zimmer mit privatem Balkon und 180° Meerblick
+🍹 2 Gourmet-Restaurants mit balinesischer & internationaler Küche + 3 Cocktailbars
+🏊‍♀️ 120 m² Infinity-Pool direkt am Strand von Jimbaran Bay
+💆‍♂️ Preisgekrönter Spa-Bereich mit 7 traditionellen balinesischen Behandlungen
+🚣‍♀️ Kostenlose Wassersportausrüstung (Kajak, SUP, Schnorchel-Set)
 
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
 
@@ -196,10 +196,10 @@ Sunset Beach Resort - dein 5-Sterne Traumhotel auf Bali!
       `🔥 TRAUMURLAUB ALERT! Paris erleben ab 599 € 🇫🇷
 Hôtel Les Jardins de Montmartre - dein stylisches Stadthotel im Herzen der Romantik!
 
-📍 Super Lage im kultigen Künstlerviertel Montmartre
-🥐 Köstliches französisches Frühstück mit Croissants & Café
-🛏️ Moderne, gemütliche Zimmer zum Entspannen
-🚶‍♀️ Alle Top-Sehenswürdigkeiten zu Fuß erreichbar
+📍 Nur 450 m zum weltberühmten Sacré-Cœur und 2 km zum Moulin Rouge
+🥐 Täglich frische Croissants & französisches Frühstücksbuffet mit 12+ Optionen
+🛏️ 24 m² Zimmer mit King-Size-Bett und kostenfreiem WLAN (100 Mbit/s)
+🚶‍♀️ 5 Gehminuten zur Metro-Station Abbesses (Linie 12)
 
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
 
@@ -213,10 +213,10 @@ Hôtel Les Jardins de Montmartre - dein stylisches Stadthotel im Herzen der Roma
       `🌊 GRIECHENLAND-HAMMER! Santorini ab nur 799 € 🏝️
 Blue Bay Resort & Spa - dein traumhaftes 4-Sterne Hideaway mit MEGA-Meerblick!
 
-🌅 Atemberaubende Sonnenuntergänge direkt von deinem Balkon
-🍹 Infinity-Pool mit Cocktailbar und Blick aufs Mittelmeer
-🥙 Authentische griechische Küche mit frischen lokalen Zutaten
-💆‍♀️ Wellness & Spa-Bereich für pure Entspannung
+🌅 Alle 48 Zimmer mit privatem Balkon und direktem Blick auf die Caldera
+🍹 250 m² Infinity-Pool mit Swim-up Cocktailbar und 8 Unterwasser-Liegen
+🥙 Frühstücksbuffet mit 15+ griechischen Spezialitäten und lokalen Bio-Produkten
+💆‍♀️ 400 m² Wellness-Oase mit Thalasso-Therapie und 6 Behandlungsräumen
 
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
 
@@ -320,10 +320,10 @@ SunnyBeach Family Resort - euer kinderfreundliches 4-Sterne Hotel in Antalya
       `👨‍👩‍👧‍👦 Familienglück in Paris - Entdeckungsreise für alle! 🗼
 Hôtel Les Jardins de Montmartre - euer gemütliches Zuhause in Paris
 
-🚶‍♀️ Kinderfreundliche Spaziergänge durch das bunte Montmartre-Viertel
-🥐 Familienfreundliches Frühstück mit Spezialitäten für Groß und Klein
-🛌 Geräumige Familienzimmer mit ausreichend Platz zum Spielen
-🎭 In der Nähe von familienfreundlichen Attraktionen und Parks
+🚶‍♀️ Nur 650 m zum kinderfreundlichen Parc Monceau mit 8 verschiedenen Spielplätzen
+🥐 Spezielles Kinder-Frühstücksbuffet mit 8 gesunden Optionen und Spaß-Snacks
+🛌 35 m² Familienzimmer mit Trennwand und separatem Kinder-TV (Netflix Kids inklusive)
+🎭 Kostenlose Family-Tour-Karte mit 12 kindgerechten Attraktionen in Gehdistanz
 
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
 
@@ -337,10 +337,10 @@ Hôtel Les Jardins de Montmartre - euer gemütliches Zuhause in Paris
       `🌈 Familienspaß unter Griechenlands Sonne! 👨‍👩‍👧‍👦
 Aeolos Beach Resort - euer kinderfreundliches 4-Sterne Paradies auf Korfu
 
-🏊‍♀️ Mehrere Pools mit Kinderbecken und aufregendem Wasserpark
-🍕 Familien-Buffet mit Kinderecke und kindgerechten Essenszeiten
-👶 Professionelle Kinderbetreuung und Mini-Club für verschiedene Altersgruppen
-🏖️ Flach abfallender Sandstrand - ideal für Wasserspaß mit den Kleinen
+🏊‍♀️ 3 Pools mit Kinderbecken (25-45 cm tief) und 350 m² Wasserpark mit 5 Rutschen
+🍕 Familien-Buffet mit spezieller Kinderecke (17:30-19:00 Uhr) und 14 kindgerechten Gerichten
+👶 Professioneller Kids-Club mit 6 ausgebildeten Betreuern (3 Altersgruppen: 3-5, 6-9, 10-12 Jahre)
+🏖️ 250 m langer, flach abfallender Sandstrand mit kostenloser Kinderausrüstung (Eimer, Schaufeln)
 
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
 
@@ -522,12 +522,21 @@ WICHTIG - Folgendes muss EXAKT so in dem Post enthalten sein:
 5. Die exakte ucandoo-Zahlungsinfos: "Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo"
 6. Die exakten 3 Links: "Jetzt buchen", "Ratenrechner", "Reisebüro finden"
 
+ABSOLUT ENTSCHEIDEND FÜR DIE BULLET POINTS:
+- Die Bullet Points müssen KONKRETE und SPEZIFISCHE Details dieses Hotels beschreiben
+- Vermeide um jeden Preis generische Aussagen wie "ideale Lage", "hervorragender Service" oder "entspannende Atmosphäre"
+- Stattdessen: gib EXAKTE Details, z.B. "300 m zum Sandstrand" statt "strandnah" oder "4 mediterranene Restaurants" statt "tolles Essen"
+- Nutze messbare Angaben wo immer möglich (Entfernungen, Anzahl, Größen, etc.)
+- Erwähne tatsächliche Ausstattungsmerkmale, nicht die damit verbundenen Gefühle
+- Konzentriere dich auf Fakten und Details, die für dieses konkrete Hotel EINZIGARTIG sind
+
 VERBOTEN im Post:
 - Telefonnummern, E-Mail-Adressen oder Internetadressen
 - Fehlermeldungen oder "keine Ergebnisse", "leider nicht verfügbar" etc.
 - Platzhalter wie [TEXT] oder ähnliches
 - Zusätzliche Links oder CTAs außer den vorgegebenen
 - Website-Navigation wie "Impressum", "Startseite" etc.
+- Generische Beschreibungen, die auf jedes Hotel zutreffen könnten
 `;
 
     // Verbesserter Haupt-Prompt
