@@ -185,6 +185,17 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
     const isLikelyHotelFeature = (text: string): boolean => {
       const lowerText = text.toLowerCase();
       
+      // Immediately exclude error messages or "no offers available" type content
+      if (lowerText.includes("keine angebote") || 
+          lowerText.includes("nicht verfügbar") || 
+          lowerText.includes("keine ergebnisse") ||
+          lowerText.includes("leider") ||
+          lowerText.includes("suche") ||
+          lowerText.includes("sorry") ||
+          lowerText.includes("fehler")) {
+        return false;
+      }
+      
       // Check if it contains hotel feature keywords
       const hasFeatureKeyword = hotelFeatureKeywords.some(keyword => lowerText.includes(keyword));
       
@@ -198,7 +209,11 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
       const isSpecialPattern = lowerText.includes('http') || 
                                lowerText.includes('@') || 
                                lowerText.includes('tel:') ||
-                               /^\+?\d[\d\s-]{7,}$/.test(lowerText); // Phone number pattern
+                               /^\+?\d[\d\s-]{7,}$/.test(lowerText) || // Phone number pattern
+                               lowerText.includes('gmbh') ||
+                               lowerText.includes('persönlich') ||
+                               lowerText.includes('str.') ||
+                               lowerText.includes('straße');
       
       return hasFeatureKeyword && !hasNonFeatureKeyword && hasGoodLength && !isSpecialPattern;
     };

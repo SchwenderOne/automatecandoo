@@ -175,6 +175,22 @@ export async function generateWhatsAppPost(hotelData: HotelData, options: Genera
     
     const destEmoji = options.useEmojis ? getDestinationEmoji(hotelData.destination) : "";
     
+    // Vereinfache die Destination - entferne Duplikate und kürze zu lange Destination
+    let cleanDestination = hotelData.destination;
+    // Entferne Duplikate wie "Paris, Paris" oder "Paris & Umgebung, Paris"
+    if (cleanDestination.includes(',') || cleanDestination.includes('&')) {
+      const parts = cleanDestination.split(/[,&]/);
+      // Manuelle Deduplizierung statt Set (wegen TypeScript-Konfiguration)
+      const uniqueParts: string[] = [];
+      parts.forEach(part => {
+        const trimmed = part.trim();
+        if (trimmed.length > 0 && !uniqueParts.includes(trimmed)) {
+          uniqueParts.push(trimmed);
+        }
+      });
+      cleanDestination = uniqueParts.join(', ');
+    }
+
     const prompt = `
 Du bist ein erfahrener WhatsApp-Marketing-Texter für Reiseangebote der Firma ucandoo. 
 Du sollst einen attraktiven WhatsApp-Post im vorgegebenen Format erstellen.
@@ -184,7 +200,7 @@ WICHTIG: Folge EXAKT diesem Format, das ich dir gleich zeige. Keine Abweichungen
 Hier sind die Informationen zum Reiseangebot:
 - Hotelname: ${hotelData.hotelName}
 - Kategorie: ${hotelData.hotelCategory || "Luxuriöses Hotel"}
-- Destination: ${hotelData.destination}
+- Destination: ${cleanDestination}
 ${hotelData.price ? `- Preis: ${hotelData.price}` : ''}
 ${hotelData.duration ? `- Dauer: ${hotelData.duration}` : ''}
 - Hauptmerkmale:
@@ -206,7 +222,7 @@ EXAKTES FORMAT für den Post:
 
 Beispiel-Format:
 ☀️ Mallorca in Luxus – und zwar richtig! ${destEmoji}
-${hotelData.hotelName} – dein ${hotelData.hotelCategory || "Traumhotel"} auf ${hotelData.destination}!
+${hotelData.hotelName} – dein ${hotelData.hotelCategory || "Traumhotel"} auf ${cleanDestination}!
 
 ${enhancedFeatures.join("\n")}
 💳 Und wie immer bei uns: Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.
@@ -227,6 +243,8 @@ WICHTIG:
 - Verwende KEINE ANDEREN LINKS oder CTAs als die vorgegebenen
 - Verwende KEINE Kontaktdaten wie Telefonnummern, E-Mail-Adressen oder Straßennamen in den Hauptmerkmalen
 - Verwende KEINE Parameter oder Begriffe wie "Reiseland GmbH" oder "Diese Seite wirklich verlassen" in den Hauptmerkmalen
+- Verwende KEINE Fehlermeldungen oder Texte wie "keine Angebote verfügbar" in den Hauptmerkmalen
+- Erwähne nicht, wenn etwas fehlt - sage nie "leider" oder "keine Ergebnisse" oder ähnliches
 - Gib nur den fertigen Post zurück, keine Erklärungen
 `;
 
