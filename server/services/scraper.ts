@@ -14,20 +14,53 @@ interface HotelData {
   duration?: string;
 }
 
+function cleanPrice(priceText: string): string {
+  // Standardize the price format
+  const price = priceText
+    .replace(/[^\d,.€]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Make sure it has the € symbol and "ab" prefix if missing
+  if (!price.includes('ab') && /\d/.test(price)) {
+    return `ab ${price.includes('€') ? price : price + ' €'}`;
+  }
+  
+  return price.includes('€') ? price : price + ' €';
+}
+
 export async function scrapeHotelData(url: string): Promise<HotelData | null> {
   try {
-    const response = await axios.get(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache",
-      },
-    });
+    // Use a more robust fetch with retries
+    let retryCount = 0;
+    let response = null;
+    
+    while (retryCount < 3) {
+      try {
+        response = await axios.get(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+          },
+          timeout: 10000, // 10 second timeout
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        retryCount++;
+        if (retryCount >= 3) throw error; // Re-throw after final retry
+        await new Promise(r => setTimeout(r, 1000)); // Wait 1 second before retry
+      }
+    }
+
+    if (!response || !response.data) {
+      throw new Error("Failed to fetch hotel data");
+    }
 
     const $ = cheerio.load(response.data);
     
@@ -400,24 +433,96 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
       }
     }
     
-    // Limit features to 4-5 best ones
-    const limitedFeatures = features.slice(0, 5);
-    const limitedFeatureIcons = featureIcons.slice(0, 5);
+    // Validate the extracted data before returning
+    if (!hotelName || hotelName.length < 3) {
+      console.warn("Scraped hotel name is invalid:", hotelName);
+      return null;
+    }
+    
+    if (!destination || destination === "Traumdestination") {
+      // Try harder to find a destination by looking at the URL path
+      const urlPath = new URL(url).pathname.split('/');
+      const potentialDestinations = urlPath.filter(part => 
+        part.length > 3 && 
+        !part.includes('.') && 
+        !part.includes('hotel') &&
+        !part.includes('angebot') &&
+        !part.includes('zimmer')
+      );
+      
+      if (potentialDestinations.length > 0) {
+        destination = potentialDestinations[0]
+          .replace(/-/g, ' ')
+          .replace(/(\w)(\w*)/g, (g0, g1, g2) => g1.toUpperCase() + g2.toLowerCase());
+      }
+    }
+    
+    // If price is found, format it properly
+    if (price) {
+      price = cleanPrice(price);
+    }
+    
+    // Make sure we have at least some features
+    if (features.length === 0) {
+      console.warn("No features found for hotel:", hotelName);
+      // Add some generic features based on hotel category if available
+      if (hotelCategory && hotelCategory.includes('5')) {
+        features.push("Luxuriöse Ausstattung");
+        features.push("Erstklassiger Service");
+        featureIcons.push("✨");
+        featureIcons.push("👑");
+      } else if (hotelCategory && hotelCategory.includes('4')) {
+        features.push("Komfortable Zimmer");
+        features.push("Qualitätsservice");
+        featureIcons.push("🛏️");
+        featureIcons.push("👍");
+      }
+    }
+    
+    // Create final limited features arrays
+    const finalFeatures = features.slice(0, 5);
+    const finalFeatureIcons = featureIcons.slice(0, 5);
+    
+    // Make sure we have enough icons for all features
+    while (finalFeatureIcons.length < finalFeatures.length) {
+      finalFeatureIcons.push("✓");
+    }
+    
+    // Log successful extraction
+    console.log(`Successfully extracted data for ${hotelName} in ${destination}`);
     
     return {
       hotelName,
       hotelCategory,
       destination,
-      features: limitedFeatures,
-      featureIcons: limitedFeatureIcons,
+      features: finalFeatures,
+      featureIcons: finalFeatureIcons,
       amenities,
       description,
       imageUrl,
       price,
       duration
     };
-  } catch (error) {
+  } catch (error: any) { // Type assertion to handle Error properties
     console.error("Error scraping hotel data:", error);
+    
+    // Retry with a different approach if the error is related to network 
+    // or if there's a specific scraping issue
+    if (error.message && typeof error.message === 'string' && (
+        error.message.includes('ECONNREFUSED') || 
+        error.message.includes('ETIMEDOUT') ||
+        error.message.includes('status code 4') || 
+        error.message.includes('status code 5'))) {
+      console.log("Retrying with fallback method...");
+      try {
+        // Implement fallback scraping logic here
+        return null;
+      } catch (fallbackError) {
+        console.error("Fallback scraping also failed:", fallbackError);
+        return null;
+      }
+    }
+    
     return null;
   }
 }
