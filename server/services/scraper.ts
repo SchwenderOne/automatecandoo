@@ -36,9 +36,23 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
                    $('.hotel-title').text().trim() || 
                    $('h1').first().text().trim();
     
-    // Clean up the hotel name if it contains URL parameters
-    if (hotelName.includes('?') || hotelName.includes('&')) {
-      hotelName = hotelName.split(/[?&]/)[0].trim();
+    // If we got "B" as the hotel name but "B&B" is in the title, fix it
+    if (hotelName === 'B') {
+      const pageTitle = $('title').text().trim();
+      if (pageTitle.includes('B&B')) {
+        // Try to extract the full hotel name from title
+        const titleMatch = pageTitle.match(/B&B\s+[\w\s\d]+/i);
+        if (titleMatch) {
+          hotelName = titleMatch[0].trim();
+        } else {
+          hotelName = 'B&B Hotel'; // Fallback if we can't extract the full name
+        }
+      }
+    }
+    
+    // Clean up the hotel name if it contains URL parameters, but preserve B&B
+    if (hotelName.includes('?')) {
+      hotelName = hotelName.split('?')[0].trim();
     }
     
     // Extract hotel category/stars
@@ -161,9 +175,16 @@ export async function scrapeHotelData(url: string): Promise<HotelData | null> {
       destination = "Traumdestination";
     }
     
-    // Extract quality hotel features - not websire navigation elements!
+    // Extract quality hotel features - not website navigation elements!
     const features: string[] = [];
     const featureIcons: string[] = [];
+    
+    // Filter out error messages from page content before extracting features
+    const errorMessageEl = $('body').find(':contains("Leider sind zu Ihrer Suche keine passenden Angebote verfügbar")');
+    if (errorMessageEl.length > 0) {
+      // Remove the error message element to prevent it from being extracted as a feature
+      errorMessageEl.remove();
+    }
     
     // Keywords that indicate real hotel features vs. website elements
     const hotelFeatureKeywords = [
