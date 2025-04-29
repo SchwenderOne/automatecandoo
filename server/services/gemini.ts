@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface HotelData {
   hotelName: string;
@@ -16,9 +16,132 @@ interface GenerationOptions {
   style: "enthusiastic" | "elegant" | "family" | "adventure";
 }
 
+// Feature emoji mapping für Hotelmerkmale
+const featureEmojiMap: Record<string, string> = {
+  "pool": "🏊‍♀️",
+  "strand": "🏖️",
+  "meer": "🌊",
+  "frühstück": "🍽️",
+  "restaurant": "🍽️",
+  "essen": "🍽️",
+  "gourmet": "🍽️",
+  "kulinarisch": "🍽️",
+  "dining": "🍽️",
+  "spa": "💆‍♂️",
+  "wellness": "🧖‍♀️",
+  "massage": "💆‍♀️",
+  "fitness": "💪",
+  "gym": "🏋️‍♂️",
+  "lage": "📍",
+  "zentral": "📍",
+  "zentrum": "📍",
+  "aussicht": "🌇",
+  "view": "🌇",
+  "blick": "🌇",
+  "family": "👨‍👩‍👧‍👦",
+  "familie": "👨‍👩‍👧‍👦",
+  "kinder": "👶",
+  "zimmer": "🛏️",
+  "suite": "🛏️",
+  "bett": "🛏️",
+  "design": "🎨",
+  "stil": "🎨",
+  "stylish": "🎨",
+  "modern": "🎨",
+  "bar": "🍸",
+  "cocktail": "🍹",
+  "wein": "🍷",
+  "garten": "🌿",
+  "terrasse": "🌴",
+  "balkon": "🌴",
+  "infinity": "♾️",
+  "service": "👑",
+  "exklusiv": "✨",
+  "luxus": "✨",
+  "boutique": "🛍️",
+  "rooftop": "🏙️",
+  "dachterrasse": "🏙️",
+  "stadt": "🏙️",
+  "privat": "🔐",
+  "ruhig": "🧘",
+  "entspannung": "🧘",
+  "party": "🎉",
+  "unterhaltung": "🎭",
+  "show": "🎭",
+  "kultur": "🏛️",
+  "sehenswürdigkeiten": "🏛️",
+  "sport": "⚽",
+  "aktivität": "🚶‍♂️",
+  "abenteuer": "🧗‍♂️",
+  "natur": "🌲",
+  "landschaft": "🏞️",
+  "shopping": "🛍️",
+  "einkaufen": "🛍️",
+  "transfer": "🚗",
+  "flughafen": "✈️",
+  "internet": "📶",
+  "wifi": "📶",
+  "parken": "🅿️",
+  "garage": "🅿️"
+};
+
+// Hilfsfunktion zum Zuordnen von Emojis zu Features
+const getFeatureEmoji = (feature: string): string => {
+  const lowerFeature = feature.toLowerCase();
+  for (const [keyword, emoji] of Object.entries(featureEmojiMap)) {
+    if (lowerFeature.includes(keyword)) {
+      return emoji;
+    }
+  }
+  return "✅"; // Default emoji if no match found
+};
+
+// Hilfsfunktion zum Zuordnen von Emojis zu Destinationen
+const getDestinationEmoji = (destination: string): string => {
+  const lowerDestination = destination.toLowerCase();
+  
+  if (lowerDestination.includes("mallorca") || lowerDestination.includes("spanien")) return "🇪🇸";
+  if (lowerDestination.includes("italien")) return "🇮🇹";
+  if (lowerDestination.includes("griechenland")) return "🇬🇷";
+  if (lowerDestination.includes("türkei")) return "🇹🇷";
+  if (lowerDestination.includes("ägypten")) return "🇪🇬";
+  if (lowerDestination.includes("dubai") || lowerDestination.includes("vae")) return "🇦🇪";
+  if (lowerDestination.includes("thailand")) return "🇹🇭";
+  if (lowerDestination.includes("malediven")) return "🇲🇻";
+  if (lowerDestination.includes("marokko")) return "🇲🇦";
+  if (lowerDestination.includes("tunesien")) return "🇹🇳";
+  if (lowerDestination.includes("frankreich")) return "🇫🇷";
+  if (lowerDestination.includes("österreich")) return "🇦🇹";
+  if (lowerDestination.includes("schweiz")) return "🇨🇭";
+  if (lowerDestination.includes("usa") || lowerDestination.includes("amerika")) return "🇺🇸";
+  if (lowerDestination.includes("karibik") || lowerDestination.includes("caribbean")) return "🏝️";
+  if (lowerDestination.includes("bali") || lowerDestination.includes("indonesien")) return "🇮🇩";
+  if (lowerDestination.includes("mexiko")) return "🇲🇽";
+  if (lowerDestination.includes("dom rep") || lowerDestination.includes("dominikanische")) return "🇩🇴";
+  if (lowerDestination.includes("portugal")) return "🇵🇹";
+  if (lowerDestination.includes("kroatien")) return "🇭🇷";
+  
+  // Generic destination emojis
+  if (lowerDestination.includes("strand") || lowerDestination.includes("beach")) return "🏖️";
+  if (lowerDestination.includes("berg") || lowerDestination.includes("alpen")) return "🏔️";
+  if (lowerDestination.includes("city") || lowerDestination.includes("stadt")) return "🌆";
+  if (lowerDestination.includes("insel")) return "🏝️";
+  if (lowerDestination.includes("see") || lowerDestination.includes("lake")) return "🌊";
+  
+  return "✨"; // Default emoji
+};
+
+// Style-Beschreibungen für verschiedene Textstile
+const styleDescriptions = {
+  enthusiastic: "begeistert, energetisch und lebhaft. Verwende ausdrucksstarke Sprache und Ausrufezeichen, um Begeisterung zu vermitteln.",
+  elegant: "elegant, kultiviert und luxuriös. Verwende gehobene Sprache, die Exklusivität und Premium-Qualität betont.",
+  family: "familienfreundlich und warm. Betone Aspekte, die für Familien wichtig sind, wie Sicherheit, Komfort und Aktivitäten für Kinder.",
+  adventure: "abenteuerlich und aufregend. Betone die Möglichkeit für Erlebnisse, Entdeckungen und aktive Freizeitgestaltung."
+};
+
 // Initialize Gemini API
 function getGeminiApi() {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey) {
     throw new Error("Gemini API Key fehlt. Bitte API-Key konfigurieren.");
@@ -35,138 +158,20 @@ export async function generateWhatsAppPost(hotelData: HotelData, options: Genera
     // Die aktuellste Gemini-Version verwendet eine andere Methode für Safety Settings
     // Wir entfernen sie vorerst, damit die API richtig funktioniert
     
-    // Hilfsfunktionen außerhalb der Hauptfunktion definieren
-    const getFeatureEmojiFunc = (feature: string): string => {
-      const lowerFeature = feature.toLowerCase();
-      for (const [keyword, emoji] of Object.entries(featureEmojiMap)) {
-        if (lowerFeature.includes(keyword)) {
-          return emoji;
-        }
-      }
-      return "✅"; // Default emoji if no match found
-    };
+    // Wir verwenden die globalen Hilfsfunktionen
     
-    const getDestinationEmojiFunc = (destination: string): string => {
-      const lowerDestination = destination.toLowerCase();
-      
-      if (lowerDestination.includes("mallorca") || lowerDestination.includes("spanien")) return "🇪🇸";
-      if (lowerDestination.includes("italien")) return "🇮🇹";
-      if (lowerDestination.includes("griechenland")) return "🇬🇷";
-      if (lowerDestination.includes("türkei")) return "🇹🇷";
-      if (lowerDestination.includes("ägypten")) return "🇪🇬";
-      if (lowerDestination.includes("dubai") || lowerDestination.includes("vae")) return "🇦🇪";
-      if (lowerDestination.includes("thailand")) return "🇹🇭";
-      if (lowerDestination.includes("malediven")) return "🇲🇻";
-      if (lowerDestination.includes("marokko")) return "🇲🇦";
-      if (lowerDestination.includes("tunesien")) return "🇹🇳";
-      if (lowerDestination.includes("frankreich")) return "🇫🇷";
-      if (lowerDestination.includes("österreich")) return "🇦🇹";
-      if (lowerDestination.includes("schweiz")) return "🇨🇭";
-      if (lowerDestination.includes("usa") || lowerDestination.includes("amerika")) return "🇺🇸";
-      if (lowerDestination.includes("karibik") || lowerDestination.includes("caribbean")) return "🏝️";
-      if (lowerDestination.includes("bali") || lowerDestination.includes("indonesien")) return "🇮🇩";
-      if (lowerDestination.includes("mexiko")) return "🇲🇽";
-      if (lowerDestination.includes("dom rep") || lowerDestination.includes("dominikanische")) return "🇩🇴";
-      if (lowerDestination.includes("portugal")) return "🇵🇹";
-      if (lowerDestination.includes("kroatien")) return "🇭🇷";
-      
-      // Generic destination emojis
-      if (lowerDestination.includes("strand") || lowerDestination.includes("beach")) return "🏖️";
-      if (lowerDestination.includes("berg") || lowerDestination.includes("alpen")) return "🏔️";
-      if (lowerDestination.includes("city") || lowerDestination.includes("stadt")) return "🌆";
-      if (lowerDestination.includes("insel")) return "🏝️";
-      if (lowerDestination.includes("see") || lowerDestination.includes("lake")) return "🌊";
-      
-      return "✨"; // Default emoji
-    };
-    
-    // Construct the prompt for Gemini based on the hotel data and styling options
-    const styleDescriptions = {
-      enthusiastic: "begeistert, energetisch und lebhaft. Verwende ausdrucksstarke Sprache und Ausrufezeichen, um Begeisterung zu vermitteln.",
-      elegant: "elegant, kultiviert und luxuriös. Verwende gehobene Sprache, die Exklusivität und Premium-Qualität betont.",
-      family: "familienfreundlich und warm. Betone Aspekte, die für Familien wichtig sind, wie Sicherheit, Komfort und Aktivitäten für Kinder.",
-      adventure: "abenteuerlich und aufregend. Betone die Möglichkeit für Erlebnisse, Entdeckungen und aktive Freizeitgestaltung."
-    };
-    
-    // Create emoji map for features if emojis are enabled
-    const featureEmojiMap: Record<string, string> = {
-      "pool": "🏊‍♀️",
-      "strand": "🏖️",
-      "meer": "🌊",
-      "frühstück": "🍽️",
-      "restaurant": "🍽️",
-      "essen": "🍽️",
-      "gourmet": "🍽️",
-      "kulinarisch": "🍽️",
-      "dining": "🍽️",
-      "spa": "💆‍♂️",
-      "wellness": "🧖‍♀️",
-      "massage": "💆‍♀️",
-      "fitness": "💪",
-      "gym": "🏋️‍♂️",
-      "lage": "📍",
-      "zentral": "📍",
-      "zentrum": "📍",
-      "aussicht": "🌇",
-      "view": "🌇",
-      "blick": "🌇",
-      "family": "👨‍👩‍👧‍👦",
-      "familie": "👨‍👩‍👧‍👦",
-      "kinder": "👶",
-      "zimmer": "🛏️",
-      "suite": "🛏️",
-      "bett": "🛏️",
-      "design": "🎨",
-      "stil": "🎨",
-      "stylish": "🎨",
-      "modern": "🎨",
-      "bar": "🍸",
-      "cocktail": "🍹",
-      "wein": "🍷",
-      "garten": "🌿",
-      "terrasse": "🌴",
-      "balkon": "🌴",
-      "infinity": "♾️",
-      "service": "👑",
-      "exklusiv": "✨",
-      "luxus": "✨",
-      "boutique": "🛍️",
-      "rooftop": "🏙️",
-      "dachterrasse": "🏙️",
-      "stadt": "🏙️",
-      "privat": "🔐",
-      "ruhig": "🧘",
-      "entspannung": "🧘",
-      "party": "🎉",
-      "unterhaltung": "🎭",
-      "show": "🎭",
-      "kultur": "🏛️",
-      "sehenswürdigkeiten": "🏛️",
-      "sport": "⚽",
-      "aktivität": "🚶‍♂️",
-      "abenteuer": "🧗‍♂️",
-      "natur": "🌲",
-      "landschaft": "🏞️",
-      "shopping": "🛍️",
-      "einkaufen": "🛍️",
-      "transfer": "🚗",
-      "flughafen": "✈️",
-      "internet": "📶",
-      "wifi": "📶",
-      "parken": "🅿️",
-      "garage": "🅿️"
-    };
+    // Wir verwenden die globalen Definitionen von featureEmojiMap und styleDescriptions
     
     // Create enhanced features with emojis if enabled
     const enhancedFeatures = hotelData.features.map((feature, index) => {
       if (options.useEmojis) {
-        const emoji = hotelData.featureIcons?.[index] || getFeatureEmojiFunc(feature);
+        const emoji = hotelData.featureIcons?.[index] || getFeatureEmoji(feature);
         return `${emoji} ${feature}`;
       }
       return `- ${feature}`;
     });
     
-    const destEmoji = options.useEmojis ? getDestinationEmojiFunc(hotelData.destination) : "";
+    const destEmoji = options.useEmojis ? getDestinationEmoji(hotelData.destination) : "";
     
     const prompt = `
 Du bist ein erfahrener WhatsApp-Marketing-Texter für Reiseangebote der Firma ucandoo. 
