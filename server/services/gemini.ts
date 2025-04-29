@@ -275,15 +275,65 @@ Jungle Explorer Lodge - dein außergewöhnliches Naturresort im Regenwald
   return selectedExamples.slice(0, 2).join('\n\n--- WEITERES BEISPIEL ---\n\n');
 };
 
-// Dynamische Temperatur-Einstellung je nach Stil
-const getTemperatureForStyle = (style: string): number => {
+// Dynamische Parametereinstellung je nach Stil und Kontext
+const getGenerationParams = (style: string, hotelData: HotelData): { temperature: number; topP: number; topK: number } => {
+  // Basis-Temperatur je nach gewähltem Stil
+  let baseTemperature = 0.7;
+  let topP = 0.95;
+  let topK = 40;
+  
   switch (style) {
-    case "enthusiastic": return 0.8;  // Kreativere Texte für begeisterten Stil
-    case "elegant": return 0.6;       // Kontrollierter für eleganten Stil
-    case "family": return 0.7;        // Ausgewogen für Familienstil
-    case "adventure": return 0.75;    // Etwas kreativer für abenteuerlustigen Stil
-    default: return 0.7;              // Standard
+    case "enthusiastic":
+      baseTemperature = 0.8;   // Kreativere Texte für begeisterten Stil
+      topP = 0.97;             // Mehr Vielfalt bei begeistertem Stil
+      break;
+    case "elegant":
+      baseTemperature = 0.6;   // Kontrollierter für eleganten Stil
+      topP = 0.92;             // Weniger Varianz für konsistent eleganten Ton
+      topK = 30;               // Konzentriertere Wortwahl für eleganten Stil
+      break;
+    case "family":
+      baseTemperature = 0.7;   // Ausgewogen für Familienstil
+      topK = 50;               // Etwas größere Auswahl für familienfreundliche Formulierungen
+      break;
+    case "adventure":
+      baseTemperature = 0.75;  // Etwas kreativer für abenteuerlustigen Stil
+      topP = 0.96;             // Leicht erhöhte Vielfalt für abenteuerliche Beschreibungen
+      break;
   }
+  
+  // Kontextabhängige Feinabstimmung
+  
+  // Bei Luxushotels (5-Sterne) etwas kontrollierter für einen "ehrwürdigeren" Ton
+  if (hotelData.hotelCategory?.includes('5-Sterne')) {
+    baseTemperature = Math.max(0.55, baseTemperature - 0.1);
+    topP = Math.max(0.9, topP - 0.02);
+  }
+  
+  // Bei Familienhotels oder wenn "Familie/Kinder" in den Features erwähnt wird, etwas wärmer
+  const familyRelated = hotelData.features.some(f => 
+    f.toLowerCase().includes('familie') || 
+    f.toLowerCase().includes('kinder')
+  );
+  if (familyRelated && style !== "elegant") {
+    baseTemperature = Math.min(0.85, baseTemperature + 0.05);
+  }
+  
+  // Bei Strandhotels etwas lebhafter für Urlaubsgefühl
+  const beachRelated = hotelData.features.some(f => 
+    f.toLowerCase().includes('strand') || 
+    f.toLowerCase().includes('meer') ||
+    f.toLowerCase().includes('beach')
+  );
+  if (beachRelated && style !== "elegant") {
+    baseTemperature = Math.min(0.85, baseTemperature + 0.05);
+  }
+  
+  return { 
+    temperature: baseTemperature,
+    topP,
+    topK
+  };
 };
 
 export async function generateWhatsAppPost(hotelData: HotelData, options: GenerationOptions): Promise<string> {
@@ -385,21 +435,23 @@ ${fewShotExamples}
 Erstelle nun einen neuen originellen Post im gleichen Format für das angegebene Hotel!
 `;
 
-    // Dynamische Temperature basierend auf dem Stil
-    const temperature = getTemperatureForStyle(options.style);
+    // Dynamische Parameter basierend auf Stil und Hotelkontext
+    const params = getGenerationParams(options.style, hotelData);
 
     const generationConfig = {
-      temperature,
-      topK: 40,
-      topP: 0.95,
+      temperature: params.temperature,
+      topK: params.topK,
+      topP: params.topP,
       maxOutputTokens: 1000,
     };
 
-    // Erste Anfrage mit systemPrompt
+    // Gemini 1.5 unterstützt keine system role, daher fügen wir den systemPrompt zum Hauptprompt hinzu
+    const combinedPrompt = `${systemPrompt}\n\n${prompt}`;
+    
+    // Erste Anfrage mit kombiniertem Prompt
     const result = await model.generateContent({
       contents: [
-        { role: "system", parts: [{ text: systemPrompt }] },
-        { role: "user", parts: [{ text: prompt }] }
+        { role: "user", parts: [{ text: combinedPrompt }] }
       ],
       generationConfig,
     });
@@ -412,16 +464,15 @@ Erstelle nun einen neuen originellen Post im gleichen Format für das angegebene
       console.log("Erster Generierungsversuch enthielt nicht alle erforderlichen Elemente. Versuche es erneut mit angepasstem Prompt...");
       
       // Zweiter Versuch mit strikterem Prompt und weniger Kreativität
-      const strictPrompt = prompt + "\n\nWICHTIG: Stelle sicher, dass der Hotelname, die Destination und alle anderen Informationen korrekt enthalten sind. Halte dich EXAKT an das vorgegebene Format!";
+      const strictPrompt = combinedPrompt + "\n\nWICHTIG: Stelle sicher, dass der Hotelname, die Destination und alle anderen Informationen korrekt enthalten sind. Halte dich EXAKT an das vorgegebene Format!";
       
       const secondResult = await model.generateContent({
         contents: [
-          { role: "system", parts: [{ text: systemPrompt }] },
           { role: "user", parts: [{ text: strictPrompt }] }
         ],
         generationConfig: {
           ...generationConfig,
-          temperature: Math.max(0.3, temperature - 0.3), // Reduziere Kreativität
+          temperature: Math.max(0.3, params.temperature - 0.3), // Reduziere Kreativität
         },
       });
       
@@ -435,7 +486,7 @@ Erstelle nun einen neuen originellen Post im gleichen Format für das angegebene
   }
 }
 
-// Validierungsfunktion für generierte Posts
+// Erweiterte Validierungsfunktion für generierte Posts
 function validateGeneratedPost(post: string, hotelData: HotelData): boolean {
   // Überprüfe, ob alle erforderlichen Elemente im Post enthalten sind
   const requiredElements = [
@@ -447,17 +498,111 @@ function validateGeneratedPost(post: string, hotelData: HotelData): boolean {
     "Reisebüro finden"
   ];
   
+  // Preis-Validierung - flexibler durch verschiedene Möglichkeiten der Preiswiedergabe
   if (hotelData.price) {
-    requiredElements.push(hotelData.price.replace(/[€\s.,]/g, '').substring(0, 4)); // Preisprüfung relaxed
+    const priceDigitsOnly = hotelData.price.replace(/[^0-9]/g, '');
+    const priceValue = parseInt(priceDigitsOnly, 10);
+    
+    // Verschiedene Prüfungen für den Preis, da er in verschiedenen Formaten erscheinen kann
+    if (priceValue > 0) {
+      // Überprüfe, ob die Preiszahl (mindestens die ersten Ziffern) enthalten ist
+      const pricePattern = new RegExp(`\\b${priceDigitsOnly.substring(0, Math.min(4, priceDigitsOnly.length))}\\b`);
+      
+      if (!pricePattern.test(post.replace(/\./g, ''))) { // Punkte entfernen, da sie als Tausendertrennzeichen variieren können
+        console.warn(`Validierungsfehler: Preis "${hotelData.price}" (bzw. Preiszahl) fehlt im generierten Post`);
+        return false;
+      }
+    }
   }
   
-  // Überprüfe, ob alle erforderlichen Elemente enthalten sind
+  // Überprüfe, ob alle anderen erforderlichen Elemente enthalten sind
   for (const element of requiredElements) {
+    // Bei längeren Elementen wie Hotelnamen auch Teilmatch akzeptieren
+    let matchFound = false;
     const elementLC = element.toLowerCase();
     const postLC = post.toLowerCase();
     
-    if (!postLC.includes(elementLC)) {
+    if (element === hotelData.hotelName && element.length > 15) {
+      // Bei sehr langen Hotelnamen auch Teilmatch akzeptieren (mindestens 70% des Namens)
+      const words = element.split(/\s+/);
+      let matchedWords = 0;
+      
+      for (const word of words) {
+        if (word.length > 3 && postLC.includes(word.toLowerCase())) {
+          matchedWords++;
+        }
+      }
+      
+      if (matchedWords >= Math.ceil(words.length * 0.7)) {
+        matchFound = true;
+      }
+    } else {
+      matchFound = postLC.includes(elementLC);
+    }
+    
+    if (!matchFound) {
       console.warn(`Validierungsfehler: "${element}" fehlt im generierten Post`);
+      return false;
+    }
+  }
+  
+  // Strukturvalidierung - prüft die erwartete Struktur des Posts
+  const structureValidation = [
+    { pattern: /👉\s*Jetzt buchen/i, name: "Buchungs-Link" },
+    { pattern: /👉\s*Ratenrechner/i, name: "Ratenrechner-Link" },
+    { pattern: /👉\s*Reisebüro finden/i, name: "Reisebüro-Link" },
+    { pattern: /💳|ucandoo/i, name: "Zahlungshinweis" },
+    { pattern: /✨.*✨|✨/i, name: "Abschlusssatz mit Emoji" },
+    { pattern: /➡️/i, name: "Call-to-Action mit Pfeil" }
+  ];
+  
+  for (const { pattern, name } of structureValidation) {
+    if (!pattern.test(post)) {
+      console.warn(`Validierungsfehler: Strukturelement "${name}" fehlt im generierten Post`);
+      return false;
+    }
+  }
+  
+  // Überprüfe, ob wichtige Hotel-Feature erwähnt werden (mindestens eines, wenn vorhanden)
+  if (hotelData.features && hotelData.features.length > 0) {
+    let featureMentioned = false;
+    
+    // Definiere wichtige Feature-Begriffe, die erwähnt werden sollten
+    const importantFeatures = ['pool', 'strand', 'meer', 'spa', 'wellness', 'restaurant', 'frühstück'];
+    
+    for (const feature of hotelData.features) {
+      const featureLC = feature.toLowerCase();
+      
+      // Prüfe, ob eines der wichtigen Features im Text enthalten ist
+      for (const important of importantFeatures) {
+        if (featureLC.includes(important) && post.toLowerCase().includes(important)) {
+          featureMentioned = true;
+          break;
+        }
+      }
+      
+      if (featureMentioned) break;
+    }
+    
+    // Prüfe auch, ob mindestens ein Feature-Text direkt übernommen wurde
+    if (!featureMentioned) {
+      for (const feature of hotelData.features) {
+        // Nehme wichtige Wörter aus dem Feature (mindestens 5 Zeichen lang)
+        const featureWords = feature.split(/\s+/).filter(word => word.length >= 5);
+        
+        for (const word of featureWords) {
+          if (post.toLowerCase().includes(word.toLowerCase())) {
+            featureMentioned = true;
+            break;
+          }
+        }
+        
+        if (featureMentioned) break;
+      }
+    }
+    
+    if (!featureMentioned && hotelData.features.length >= 2) {
+      console.warn("Validierungsfehler: Keine wichtigen Hotelmerkmale im Post erwähnt");
       return false;
     }
   }
@@ -473,13 +618,22 @@ function validateGeneratedPost(post: string, hotelData: HotelData): boolean {
     "www",
     "[",
     "]",
+    "{",
+    "}",
     "Impressum",
     "Datenschutz",
     "Kontakt",
     "+49",
     "Tel",
     "Telefon",
-    /\+\d{2,}/
+    /\+\d{2,}/,
+    /\(\d+\)/, // Nummern in Klammern (oft Telefonnummern)
+    /\d{5,}/, // Lange Zahlenfolgen (vermutlich Nummern)
+    /Bitte/i, // Oft in Fehlermeldungen oder Hinweisen "Bitte kontaktieren Sie..."
+    /Anfrage/i, // Häufig in Kontakt/Formular-Kontexten
+    /\bEmail\b/i, // Email-Hinweise
+    /\bSeite\b.*\bnicht\b/i, // "Seite nicht gefunden" oder Ähnliches
+    /\bSeite\b.*\bverlassen\b/i, // "Diese Seite verlassen" etc.
   ];
   
   for (const pattern of forbiddenPatterns) {
@@ -492,5 +646,13 @@ function validateGeneratedPost(post: string, hotelData: HotelData): boolean {
     }
   }
   
+  // Prüfe Länge und Struktur - zu kurze Posts sind vermutlich unvollständig
+  const lines = post.split('\n').filter(line => line.trim().length > 0);
+  if (lines.length < 10) {
+    console.warn(`Validierungsfehler: Post zu kurz (nur ${lines.length} Zeilen)`);
+    return false;
+  }
+  
+  // Alles gut!
   return true;
 }
