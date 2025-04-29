@@ -48,6 +48,46 @@ export default function Home() {
         text: update.value
       };
       updatedSourceInfo.featuresWithIcons = updatedFeatures;
+    } else if (update.key === 'customSection' && update.index !== undefined) {
+      // Abschnittstitel aktualisieren
+      const updatedSections = [...updatedSourceInfo.customSections];
+      updatedSections[update.index] = {
+        ...updatedSections[update.index],
+        title: update.value
+      };
+      updatedSourceInfo.customSections = updatedSections;
+    } else if (update.key === 'customSectionItem' && update.index !== undefined && update.sectionIndex !== undefined) {
+      // Element in einem benutzerdefinierten Abschnitt aktualisieren
+      const updatedSections = [...updatedSourceInfo.customSections];
+      updatedSections[update.sectionIndex].items[update.index] = {
+        ...updatedSections[update.sectionIndex].items[update.index],
+        text: update.value
+      };
+      updatedSourceInfo.customSections = updatedSections;
+    } else if (update.key === 'newFeature') {
+      // Neues Feature hinzufügen
+      const updatedFeatures = [...updatedSourceInfo.featuresWithIcons];
+      updatedFeatures.push({
+        icon: update.icon || "✓",
+        text: update.value
+      });
+      updatedSourceInfo.featuresWithIcons = updatedFeatures;
+    } else if (update.key === 'newCustomSection') {
+      // Neuen benutzerdefinierten Abschnitt hinzufügen
+      const updatedSections = [...updatedSourceInfo.customSections];
+      updatedSections.push({
+        title: update.value,
+        items: []
+      });
+      updatedSourceInfo.customSections = updatedSections;
+    } else if (update.key === 'customSectionItem' && update.sectionIndex !== undefined && update.index === undefined) {
+      // Neues Element zu einem bestehenden Abschnitt hinzufügen
+      const updatedSections = [...updatedSourceInfo.customSections];
+      updatedSections[update.sectionIndex].items.push({
+        icon: update.icon || "✓",
+        text: update.value
+      });
+      updatedSourceInfo.customSections = updatedSections;
     }
 
     // Aktualisierte Quellinformationen in den Post einfügen
@@ -89,7 +129,7 @@ export default function Home() {
       );
     }
 
-    // Ersetze Features
+    // Ersetze existierende Features
     updatedSourceInfo.featuresWithIcons.forEach((feature, index) => {
       if (index < result.sourceInfo.featuresWithIcons.length) {
         const originalFeature = result.sourceInfo.featuresWithIcons[index].text;
@@ -102,6 +142,100 @@ export default function Home() {
         }
       }
     });
+
+    // Füge neue Features hinzu
+    if (updatedSourceInfo.featuresWithIcons.length > result.sourceInfo.featuresWithIcons.length) {
+      // Position für neue Features finden
+      const lastOriginalFeature = result.sourceInfo.featuresWithIcons[result.sourceInfo.featuresWithIcons.length - 1].text;
+      const positionAfterLastFeature = newPostContent.indexOf(lastOriginalFeature) + lastOriginalFeature.length;
+      
+      // Neuen Inhalt vorbereiten
+      let newFeaturesContent = "";
+      for (let i = result.sourceInfo.featuresWithIcons.length; i < updatedSourceInfo.featuresWithIcons.length; i++) {
+        const feature = updatedSourceInfo.featuresWithIcons[i];
+        newFeaturesContent += `\n${feature.icon} ${feature.text}`;
+      }
+      
+      // Inhalt einfügen
+      if (positionAfterLastFeature > 0) {
+        newPostContent = newPostContent.slice(0, positionAfterLastFeature) + 
+                         newFeaturesContent + 
+                         newPostContent.slice(positionAfterLastFeature);
+      }
+    }
+    
+    // Füge benutzerdefinierte Abschnitte hinzu
+    if (updatedSourceInfo.customSections.length > 0) {
+      // Zuerst überprüfen, ob wir Abschnitte aktualisieren oder neue hinzufügen müssen
+      if (result.sourceInfo.customSections && result.sourceInfo.customSections.length > 0) {
+        // Bestehende Abschnitte aktualisieren
+        updatedSourceInfo.customSections.forEach((section, sectionIndex) => {
+          if (sectionIndex < result.sourceInfo.customSections.length) {
+            // Abschnittstitel aktualisieren
+            const originalTitle = result.sourceInfo.customSections[sectionIndex].title;
+            if (originalTitle !== section.title) {
+              newPostContent = newPostContent.replace(
+                originalTitle,
+                section.title
+              );
+            }
+            
+            // Abschnittselemente aktualisieren
+            section.items.forEach((item, itemIndex) => {
+              if (itemIndex < result.sourceInfo.customSections[sectionIndex].items.length) {
+                const originalItem = result.sourceInfo.customSections[sectionIndex].items[itemIndex].text;
+                if (originalItem !== item.text) {
+                  newPostContent = newPostContent.replace(
+                    originalItem,
+                    item.text
+                  );
+                }
+              }
+            });
+          }
+        });
+      }
+      
+      // Position für neue benutzerdefinierte Abschnitte finden (vor der ucandoo-Signatur)
+      const signatureStart = newPostContent.lastIndexOf("Gerne begleiten wir dich");
+      if (signatureStart > 0) {
+        // Neue benutzerdefinierte Abschnitte vorbereiten
+        let customSectionsContent = "";
+        
+        // Beginnen mit Abschnitten, die zu bestehenden hinzugefügt werden
+        if (result.sourceInfo.customSections) {
+          updatedSourceInfo.customSections.forEach((section, sectionIndex) => {
+            if (sectionIndex < result.sourceInfo.customSections.length) {
+              // Neue Items zu bestehenden Abschnitten hinzufügen
+              if (section.items.length > result.sourceInfo.customSections[sectionIndex].items.length) {
+                for (let i = result.sourceInfo.customSections[sectionIndex].items.length; i < section.items.length; i++) {
+                  customSectionsContent += `\n${section.items[i].icon} ${section.items[i].text}`;
+                }
+              }
+            }
+          });
+        }
+        
+        // Dann völlig neue Abschnitte hinzufügen
+        const newSectionsStartIndex = result.sourceInfo.customSections ? result.sourceInfo.customSections.length : 0;
+        for (let i = newSectionsStartIndex; i < updatedSourceInfo.customSections.length; i++) {
+          const section = updatedSourceInfo.customSections[i];
+          customSectionsContent += `\n\n*${section.title}*`;
+          
+          section.items.forEach(item => {
+            customSectionsContent += `\n${item.icon} ${item.text}`;
+          });
+        }
+        
+        // Inhalt einfügen, nur wenn es neue Inhalte gibt
+        if (customSectionsContent) {
+          newPostContent = newPostContent.slice(0, signatureStart) + 
+                           customSectionsContent + 
+                           "\n\n" + 
+                           newPostContent.slice(signatureStart);
+        }
+      }
+    }
 
     // Aktualisiere den generierten Post
     setUpdatedPost(newPostContent);

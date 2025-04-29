@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
   HotelIcon, MapPinIcon, ListChecksIcon, InfoIcon, StarIcon, 
   CheckCircleIcon, Edit2Icon, CheckIcon, PlusCircleIcon, 
-  ListIcon, XIcon, PlusIcon, SettingsIcon
+  ListIcon, PlusIcon, SettingsIcon, XIcon
 } from "lucide-react";
 import { SourceInfo, SourceInfoUpdate, CustomSection } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface SourceInformationProps {
   sourceInfo: SourceInfo;
