@@ -9,6 +9,8 @@ interface HotelData {
   amenities: string[];
   description?: string;
   imageUrl?: string;
+  price?: string;
+  duration?: string;
 }
 
 interface GenerationOptions {
@@ -183,6 +185,8 @@ Hier sind die Informationen zum Reiseangebot:
 - Hotelname: ${hotelData.hotelName}
 - Kategorie: ${hotelData.hotelCategory || "Luxuriöses Hotel"}
 - Destination: ${hotelData.destination}
+${hotelData.price ? `- Preis: ${hotelData.price}` : ''}
+${hotelData.duration ? `- Dauer: ${hotelData.duration}` : ''}
 - Hauptmerkmale:
 ${hotelData.features.map(f => "  * " + f).join("\n")}
 ${hotelData.description ? `- Beschreibung: ${hotelData.description}` : ""}
@@ -190,8 +194,8 @@ ${hotelData.description ? `- Beschreibung: ${hotelData.description}` : ""}
 Bitte erstelle einen WhatsApp-Post, der ${styleDescriptions[options.style]}
 
 EXAKTES FORMAT für den Post:
-1. Beginne mit einer catchy Headline, die Destination und Hotel nennt
-2. Dann 4-5 Bullet Points mit den Hauptmerkmalen (Nutze die gegebenen Merkmale)
+1. Beginne mit einer catchy Headline, die Destination und Hotel nennt. Erwähne den Preis, wenn bekannt.
+2. Dann 4-5 Bullet Points mit den Hauptmerkmalen (Nutze NUR die gegebenen Merkmale, keine Internet-Links, Telefonnummern oder Kontaktdaten)
 3. Dann eine Zeile, die darauf hinweist, dass man mit ucandoo jetzt buchen und später zahlen kann
 4. Dann die folgenden 3 Links exakt so formatiert:
    👉 Jetzt buchen
@@ -221,6 +225,8 @@ WICHTIG:
 - Behalte die exakten 3 Links bei
 - Benutze keine PlaceholderTexte wie [Catchy Schlussstatement], sondern kreative eigene Formulierungen
 - Verwende KEINE ANDEREN LINKS oder CTAs als die vorgegebenen
+- Verwende KEINE Kontaktdaten wie Telefonnummern, E-Mail-Adressen oder Straßennamen in den Hauptmerkmalen
+- Verwende KEINE Parameter oder Begriffe wie "Reiseland GmbH" oder "Diese Seite wirklich verlassen" in den Hauptmerkmalen
 - Gib nur den fertigen Post zurück, keine Erklärungen
 `;
 
