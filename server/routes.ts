@@ -8,6 +8,28 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { cache } from "./services/cache";
 
+// Typ für minimale Hotel-Daten zur Dummy-Generierung
+type DummyHotelData = {
+  hotelName: string;
+  destination: string;
+  features: string[];
+};
+
+// Fallback-Generator bei Gemini-Quota-Fehlern
+function generateDummyPost(hotelData: DummyHotelData, options: { useEmojis: boolean; style: string }) {
+  const { useEmojis } = options;
+  let content = `${useEmojis ? "🏨" : ""} ${hotelData.hotelName} in ${hotelData.destination}`;
+  const features = hotelData.features.slice(0, 5)
+    .map((f) => `${useEmojis ? "✅" : "-"} ${f}`)
+    .join("\n");
+  content += "\n" + features;
+  content += "\n💳 Du buchst jetzt – und zahlst später ganz flexibel mit ucandoo.";
+  content += "\n👉 Jetzt buchen\n👉 Ratenrechner\n👉 Reisebüro finden";
+  content += "\n✨ Demo-Modus: KI-Quota erreicht, nutze Platzhalter-Inhalt ✨";
+  content += "\n➡️ Probiere es später erneut";
+  return content;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Generate WhatsApp post from travel offer URL
   app.post("/api/generate-post", async (req, res) => {
@@ -62,10 +84,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate WhatsApp post using Gemini AI
-      const generatedPost = await generateWhatsAppPost(hotelData, {
-        useEmojis,
-        style,
-      });
+      let generatedPost;
+      try {
+        generatedPost = await generateWhatsAppPost(hotelData, { useEmojis, style });
+      } catch (error) {
+        console.error("Gemini API Fehler:", error);
+        generatedPost = generateDummyPost(hotelData, { useEmojis, style });
+      }
 
       // Prepare features with icons
       const featuresWithIcons = hotelData.features.map((feature: string, index: number) => ({
@@ -107,10 +132,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(200).json(responseData);
     } catch (error) {
       console.error("Error generating post:", error);
-      
+      const errMsg = error instanceof Error ? error.message : String(error);
+      // Behandle Rate-Limit-Fehler der Gemini API als 429
+      if (errMsg.includes("429") || errMsg.includes("Too Many Requests")) {
+        return res.status(429).json({
+          message: "API-Quota überschritten. Bitte warte kurz und versuche es erneut.",
+        });
+      }
       return res.status(500).json({
         message: "Es ist ein Fehler beim Generieren des Posts aufgetreten",
-        error: error instanceof Error ? error.message : "Unbekannter Fehler",
+        error: errMsg,
       });
     }
   });

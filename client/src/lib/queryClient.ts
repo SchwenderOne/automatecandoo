@@ -2,6 +2,17 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Rate limit / Quota überschritten
+    if (res.status === 429) {
+      // Versuche, JSON zu lesen und die message zu verwenden
+      try {
+        const data = await res.json();
+        throw new Error(data.message || 'Rate limit überschritten, bitte später erneut versuchen');
+      } catch {
+        throw new Error('Rate limit überschritten, bitte später erneut versuchen');
+      }
+    }
+    // Allgemeine Fehlerbehandlung
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }

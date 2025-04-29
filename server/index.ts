@@ -1,3 +1,5 @@
+import 'dotenv/config';
+// Lade Umgebungsvariablen aus .env, bevor andere Module geladen werden
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -56,15 +58,10 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  // Wähle Port aus Umgebungsvariable oder 5173 als Standard (vermeidet Konflikte mit 5000)
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5173;
+  // Starte den HTTP-Server auf dem Standard-Host mit Port-Angabe
+  server.listen(port, () => {
     log(`serving on port ${port}`);
   });
 })();
