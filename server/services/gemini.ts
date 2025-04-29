@@ -32,25 +32,53 @@ export async function generateWhatsAppPost(hotelData: HotelData, options: Genera
     const genAI = getGeminiApi();
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
-    // Safety settings - use the most permissive settings as this is a marketing context
-    const safetySettings = [
-      {
-        category: HarmCategory.HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.SEXUALLY_EXPLICIT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.DANGEROUS_CONTENT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-    ];
+    // Die aktuellste Gemini-Version verwendet eine andere Methode für Safety Settings
+    // Wir entfernen sie vorerst, damit die API richtig funktioniert
+    
+    // Hilfsfunktionen außerhalb der Hauptfunktion definieren
+    const getFeatureEmojiFunc = (feature: string): string => {
+      const lowerFeature = feature.toLowerCase();
+      for (const [keyword, emoji] of Object.entries(featureEmojiMap)) {
+        if (lowerFeature.includes(keyword)) {
+          return emoji;
+        }
+      }
+      return "✅"; // Default emoji if no match found
+    };
+    
+    const getDestinationEmojiFunc = (destination: string): string => {
+      const lowerDestination = destination.toLowerCase();
+      
+      if (lowerDestination.includes("mallorca") || lowerDestination.includes("spanien")) return "🇪🇸";
+      if (lowerDestination.includes("italien")) return "🇮🇹";
+      if (lowerDestination.includes("griechenland")) return "🇬🇷";
+      if (lowerDestination.includes("türkei")) return "🇹🇷";
+      if (lowerDestination.includes("ägypten")) return "🇪🇬";
+      if (lowerDestination.includes("dubai") || lowerDestination.includes("vae")) return "🇦🇪";
+      if (lowerDestination.includes("thailand")) return "🇹🇭";
+      if (lowerDestination.includes("malediven")) return "🇲🇻";
+      if (lowerDestination.includes("marokko")) return "🇲🇦";
+      if (lowerDestination.includes("tunesien")) return "🇹🇳";
+      if (lowerDestination.includes("frankreich")) return "🇫🇷";
+      if (lowerDestination.includes("österreich")) return "🇦🇹";
+      if (lowerDestination.includes("schweiz")) return "🇨🇭";
+      if (lowerDestination.includes("usa") || lowerDestination.includes("amerika")) return "🇺🇸";
+      if (lowerDestination.includes("karibik") || lowerDestination.includes("caribbean")) return "🏝️";
+      if (lowerDestination.includes("bali") || lowerDestination.includes("indonesien")) return "🇮🇩";
+      if (lowerDestination.includes("mexiko")) return "🇲🇽";
+      if (lowerDestination.includes("dom rep") || lowerDestination.includes("dominikanische")) return "🇩🇴";
+      if (lowerDestination.includes("portugal")) return "🇵🇹";
+      if (lowerDestination.includes("kroatien")) return "🇭🇷";
+      
+      // Generic destination emojis
+      if (lowerDestination.includes("strand") || lowerDestination.includes("beach")) return "🏖️";
+      if (lowerDestination.includes("berg") || lowerDestination.includes("alpen")) return "🏔️";
+      if (lowerDestination.includes("city") || lowerDestination.includes("stadt")) return "🌆";
+      if (lowerDestination.includes("insel")) return "🏝️";
+      if (lowerDestination.includes("see") || lowerDestination.includes("lake")) return "🌊";
+      
+      return "✨"; // Default emoji
+    };
     
     // Construct the prompt for Gemini based on the hotel data and styling options
     const styleDescriptions = {
@@ -129,61 +157,16 @@ export async function generateWhatsAppPost(hotelData: HotelData, options: Genera
       "garage": "🅿️"
     };
     
-    function getFeatureEmoji(feature: string): string {
-      const lowerFeature = feature.toLowerCase();
-      for (const [keyword, emoji] of Object.entries(featureEmojiMap)) {
-        if (lowerFeature.includes(keyword)) {
-          return emoji;
-        }
-      }
-      return "✅"; // Default emoji if no match found
-    }
-    
     // Create enhanced features with emojis if enabled
     const enhancedFeatures = hotelData.features.map((feature, index) => {
       if (options.useEmojis) {
-        const emoji = hotelData.featureIcons?.[index] || getFeatureEmoji(feature);
+        const emoji = hotelData.featureIcons?.[index] || getFeatureEmojiFunc(feature);
         return `${emoji} ${feature}`;
       }
       return `- ${feature}`;
     });
     
-    // Find a suitable destination emoji
-    function getDestinationEmoji(destination: string): string {
-      const lowerDestination = destination.toLowerCase();
-      
-      if (lowerDestination.includes("mallorca") || lowerDestination.includes("spanien")) return "🇪🇸";
-      if (lowerDestination.includes("italien")) return "🇮🇹";
-      if (lowerDestination.includes("griechenland")) return "🇬🇷";
-      if (lowerDestination.includes("türkei")) return "🇹🇷";
-      if (lowerDestination.includes("ägypten")) return "🇪🇬";
-      if (lowerDestination.includes("dubai") || lowerDestination.includes("vae")) return "🇦🇪";
-      if (lowerDestination.includes("thailand")) return "🇹🇭";
-      if (lowerDestination.includes("malediven")) return "🇲🇻";
-      if (lowerDestination.includes("marokko")) return "🇲🇦";
-      if (lowerDestination.includes("tunesien")) return "🇹🇳";
-      if (lowerDestination.includes("frankreich")) return "🇫🇷";
-      if (lowerDestination.includes("österreich")) return "🇦🇹";
-      if (lowerDestination.includes("schweiz")) return "🇨🇭";
-      if (lowerDestination.includes("usa") || lowerDestination.includes("amerika")) return "🇺🇸";
-      if (lowerDestination.includes("karibik") || lowerDestination.includes("caribbean")) return "🏝️";
-      if (lowerDestination.includes("bali") || lowerDestination.includes("indonesien")) return "🇮🇩";
-      if (lowerDestination.includes("mexiko")) return "🇲🇽";
-      if (lowerDestination.includes("dom rep") || lowerDestination.includes("dominikanische")) return "🇩🇴";
-      if (lowerDestination.includes("portugal")) return "🇵🇹";
-      if (lowerDestination.includes("kroatien")) return "🇭🇷";
-      
-      // Generic destination emojis
-      if (lowerDestination.includes("strand") || lowerDestination.includes("beach")) return "🏖️";
-      if (lowerDestination.includes("berg") || lowerDestination.includes("alpen")) return "🏔️";
-      if (lowerDestination.includes("city") || lowerDestination.includes("stadt")) return "🌆";
-      if (lowerDestination.includes("insel")) return "🏝️";
-      if (lowerDestination.includes("see") || lowerDestination.includes("lake")) return "🌊";
-      
-      return "✨"; // Default emoji
-    }
-    
-    const destEmoji = options.useEmojis ? getDestinationEmoji(hotelData.destination) : "";
+    const destEmoji = options.useEmojis ? getDestinationEmojiFunc(hotelData.destination) : "";
     
     const prompt = `
 Du bist ein erfahrener WhatsApp-Marketing-Texter für Reiseangebote der Firma ucandoo. 
@@ -246,7 +229,6 @@ WICHTIG:
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig,
-      safetySettings,
     });
 
     const response = result.response;
