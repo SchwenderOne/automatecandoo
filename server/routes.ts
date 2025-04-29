@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-import { generatePostSchema } from "@shared/schema";
+import { generatePostSchema, insertPostGenerationSchema, postGenerations } from "@shared/schema";
 import { scrapeHotelData } from "./services/scraper";
 import { generateWhatsAppPost } from "./services/gemini";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Generate WhatsApp post from travel offer URL
@@ -43,17 +45,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         style,
       });
 
+      // Prepare features with icons
+      const featuresWithIcons = hotelData.features.map((feature, index) => ({
+        icon: hotelData.featureIcons?.[index] || "✓",
+        text: feature
+      }));
+
+      // Speichere den Post in der Datenbank
+      const [savedPost] = await db.insert(postGenerations).values({
+        sourceUrl: url,
+        generatedPost: generatedPost,
+        originalPost: generatedPost, // Original-Post zum Vergleich speichern
+        hotelName: hotelData.hotelName,
+        hotelCategory: hotelData.hotelCategory,
+        destination: hotelData.destination,
+        features: featuresWithIcons,
+        customSections: [], // Initial leer
+        createdAt: new Date().toISOString()
+      }).returning();
+
       // Return generated post along with extracted source information
       return res.status(200).json({
         generatedPost: generatedPost,
+        originalPost: generatedPost,
         sourceInfo: {
           hotelName: hotelData.hotelName,
           hotelCategory: hotelData.hotelCategory,
           destination: hotelData.destination,
-          featuresWithIcons: hotelData.features.map((feature, index) => ({
-            icon: hotelData.featureIcons?.[index] || "✓",
-            text: feature
-          })),
+          featuresWithIcons: featuresWithIcons,
+          customSections: [], // Initial leer
           originalUrl: url
         }
       });
@@ -63,6 +83,199 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         message: "Es ist ein Fehler beim Generieren des Posts aufgetreten",
         error: error instanceof Error ? error.message : "Unbekannter Fehler",
+      });
+    }
+  });
+
+  // Endpoint zum Speichern aktualisierter Post-Informationen
+  app.post("/api/posts/:id/update", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { updatedPost, sourceInfo } = req.body;
+      
+      // Validiere die Anfrage
+      if (!updatedPost || !sourceInfo) {
+        return res.status(400).json({
+          message: "Ungültige Anfrage: updatedPost und sourceInfo sind erforderlich"
+        });
+      }
+      
+      // Suche den Post in der Datenbank
+      const [existingPost] = await db
+        .select()
+        .from(postGenerations)
+        .where(eq(postGenerations.id, parseInt(id)));
+      
+      if (!existingPost) {
+        return res.status(404).json({
+          message: "Post nicht gefunden"
+        });
+      }
+      
+      // Aktualisiere den Post in der Datenbank
+      const [updatedPostEntry] = await db
+        .update(postGenerations)
+        .set({
+          generatedPost: updatedPost,
+          hotelName: sourceInfo.hotelName,
+          hotelCategory: sourceInfo.hotelCategory,
+          destination: sourceInfo.destination,
+          features: sourceInfo.featuresWithIcons,
+          customSections: sourceInfo.customSections
+        })
+        .where(eq(postGenerations.id, parseInt(id)))
+        .returning();
+      
+      return res.status(200).json({
+        message: "Post erfolgreich aktualisiert",
+        post: updatedPostEntry
+      });
+    } catch (error) {
+      console.error("Error updating post:", error);
+      
+      return res.status(500).json({
+        message: "Es ist ein Fehler beim Aktualisieren des Posts aufgetreten",
+        error: error instanceof Error ? error.message : "Unbekannter Fehler"
+      });
+    }
+  });
+  
+  // Endpoint zum Hinzufügen eines neuen benutzerdefinierten Abschnitts
+  app.post("/api/posts/:id/custom-section", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, items } = req.body;
+      
+      // Validiere die Anfrage
+      if (!title || !items || !Array.isArray(items)) {
+        return res.status(400).json({
+          message: "Ungültige Anfrage: title und items (Array) sind erforderlich"
+        });
+      }
+      
+      // Suche den Post in der Datenbank
+      const [existingPost] = await db
+        .select()
+        .from(postGenerations)
+        .where(eq(postGenerations.id, parseInt(id)));
+      
+      if (!existingPost) {
+        return res.status(404).json({
+          message: "Post nicht gefunden"
+        });
+      }
+      
+      // Füge den neuen Abschnitt hinzu
+      const currentCustomSections = existingPost.customSections || [];
+      const updatedCustomSections = [
+        ...currentCustomSections,
+        { title, items }
+      ];
+      
+      // Aktualisiere den Post in der Datenbank
+      const [updatedPost] = await db
+        .update(postGenerations)
+        .set({
+          customSections: updatedCustomSections
+        })
+        .where(eq(postGenerations.id, parseInt(id)))
+        .returning();
+      
+      return res.status(200).json({
+        message: "Benutzerdefinierter Abschnitt erfolgreich hinzugefügt",
+        customSections: updatedPost.customSections
+      });
+    } catch (error) {
+      console.error("Error adding custom section:", error);
+      
+      return res.status(500).json({
+        message: "Es ist ein Fehler beim Hinzufügen des benutzerdefinierten Abschnitts aufgetreten",
+        error: error instanceof Error ? error.message : "Unbekannter Fehler"
+      });
+    }
+  });
+  
+  // Endpoint, um einen Feature-Punkt zu einem bestehenden Abschnitt hinzuzufügen
+  app.post("/api/posts/:id/add-feature", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { sectionIndex, text, icon } = req.body;
+      
+      // Validiere die Anfrage
+      if (text === undefined || (sectionIndex !== undefined && typeof sectionIndex !== 'number')) {
+        return res.status(400).json({
+          message: "Ungültige Anfrage: text und optional sectionIndex (number) sind erforderlich"
+        });
+      }
+      
+      // Suche den Post in der Datenbank
+      const [existingPost] = await db
+        .select()
+        .from(postGenerations)
+        .where(eq(postGenerations.id, parseInt(id)));
+      
+      if (!existingPost) {
+        return res.status(404).json({
+          message: "Post nicht gefunden"
+        });
+      }
+      
+      // Je nachdem, ob es ein Haupt-Feature oder ein Abschnitts-Feature ist
+      if (sectionIndex === undefined) {
+        // Füge zu den Haupt-Features hinzu
+        const currentFeatures = existingPost.features || [];
+        const updatedFeatures = [
+          ...currentFeatures,
+          { text, icon: icon || "✓" }
+        ];
+        
+        // Aktualisiere den Post in der Datenbank
+        const [updatedPost] = await db
+          .update(postGenerations)
+          .set({
+            features: updatedFeatures
+          })
+          .where(eq(postGenerations.id, parseInt(id)))
+          .returning();
+        
+        return res.status(200).json({
+          message: "Feature erfolgreich hinzugefügt",
+          features: updatedPost.features
+        });
+      } else {
+        // Füge zu einem benutzerdefinierten Abschnitt hinzu
+        const currentSections = existingPost.customSections || [];
+        
+        if (sectionIndex < 0 || sectionIndex >= currentSections.length) {
+          return res.status(400).json({
+            message: "Ungültiger sectionIndex"
+          });
+        }
+        
+        // Deep copy der Sections
+        const updatedSections = JSON.parse(JSON.stringify(currentSections));
+        updatedSections[sectionIndex].items.push({ text, icon: icon || "✓" });
+        
+        // Aktualisiere den Post in der Datenbank
+        const [updatedPost] = await db
+          .update(postGenerations)
+          .set({
+            customSections: updatedSections
+          })
+          .where(eq(postGenerations.id, parseInt(id)))
+          .returning();
+        
+        return res.status(200).json({
+          message: "Feature zum benutzerdefinierten Abschnitt erfolgreich hinzugefügt",
+          customSections: updatedPost.customSections
+        });
+      }
+    } catch (error) {
+      console.error("Error adding feature:", error);
+      
+      return res.status(500).json({
+        message: "Es ist ein Fehler beim Hinzufügen des Features aufgetreten",
+        error: error instanceof Error ? error.message : "Unbekannter Fehler"
       });
     }
   });
