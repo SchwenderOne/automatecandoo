@@ -15,4 +15,10 @@ export type SourceInfo = {
   originalUrl: string;
 };
 
+export type SourceInfoUpdate = {
+  key: 'hotelName' | 'hotelCategory' | 'destination' | 'feature';
+  value: string;
+  index?: number; // Für Updates an featuresWithIcons-Elementen
+};
+
 export { PostGenerationResponse };

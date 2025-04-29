@@ -1,12 +1,31 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { MessageSquareShare } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface PostResultProps {
   postContent: string;
+  updatedContent?: string;
+  onRegenerateContent?: (content: string) => void;
 }
 
-export default function PostResult({ postContent }: PostResultProps) {
+export default function PostResult({ 
+  postContent, 
+  updatedContent, 
+  onRegenerateContent 
+}: PostResultProps) {
+  // Der anzuzeigende Inhalt ist entweder der aktualisierte Inhalt (wenn verfügbar) oder der ursprüngliche
+  const [displayContent, setDisplayContent] = useState(postContent);
+  
+  // Wenn sich updatedContent ändert, aktualisiere displayContent
+  useEffect(() => {
+    if (updatedContent) {
+      setDisplayContent(updatedContent);
+    } else {
+      setDisplayContent(postContent);
+    }
+  }, [updatedContent, postContent]);
+
   return (
     <Card className="bg-white rounded-xl shadow-md mb-6">
       <CardHeader className="border-b border-neutral-200 p-4 flex flex-row justify-between items-center">
@@ -16,13 +35,13 @@ export default function PostResult({ postContent }: PostResultProps) {
           </div>
           <h3 className="font-heading text-lg font-semibold text-neutral-800 ml-3">Generierter WhatsApp Post</h3>
         </div>
-        <CopyButton text={postContent} className="inline-flex items-center text-sm font-medium rounded-lg px-4 py-2 border border-neutral-200 hover:bg-neutral-50">
+        <CopyButton text={displayContent} className="inline-flex items-center text-sm font-medium rounded-lg px-4 py-2 border border-neutral-200 hover:bg-neutral-50">
           Alles kopieren
         </CopyButton>
       </CardHeader>
       
       <CardContent className="p-6">
-        <pre className="whitespace-pre-line text-neutral-800 font-sans">{postContent}</pre>
+        <pre className="whitespace-pre-line text-neutral-800 font-sans">{displayContent}</pre>
       </CardContent>
     </Card>
   );

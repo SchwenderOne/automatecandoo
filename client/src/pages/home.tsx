@@ -6,7 +6,7 @@ import { z } from "zod";
 import { generatePost } from "@/lib/api";
 import { generatePostSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { PostGenerationStatus, PostGenerationResponse } from "@/types";
+import { PostGenerationStatus, PostGenerationResponse, SourceInfoUpdate, SourceInfo } from "@/types";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,89 @@ type FormValues = z.infer<typeof generatePostSchema>;
 export default function Home() {
   const [status, setStatus] = useState<PostGenerationStatus>("idle");
   const [result, setResult] = useState<PostGenerationResponse | null>(null);
+  const [updatedPost, setUpdatedPost] = useState<string | undefined>(undefined);
   const { toast } = useToast();
+
+  // Update-Funktion für Quellinformationen
+  const handleSourceInfoUpdate = (update: SourceInfoUpdate) => {
+    if (!result) return;
+
+    // Kopie der aktuellen Quellinformationen erstellen
+    const updatedSourceInfo: SourceInfo = { ...result.sourceInfo };
+
+    // Je nach Feld aktualisieren
+    if (update.key === 'hotelName') {
+      updatedSourceInfo.hotelName = update.value;
+    } else if (update.key === 'hotelCategory') {
+      updatedSourceInfo.hotelCategory = update.value;
+    } else if (update.key === 'destination') {
+      updatedSourceInfo.destination = update.value;
+    } else if (update.key === 'feature' && update.index !== undefined) {
+      // Feature-Text aktualisieren, aber Icon beibehalten
+      const updatedFeatures = [...updatedSourceInfo.featuresWithIcons];
+      updatedFeatures[update.index] = {
+        ...updatedFeatures[update.index],
+        text: update.value
+      };
+      updatedSourceInfo.featuresWithIcons = updatedFeatures;
+    }
+
+    // Aktualisierte Quellinformationen in den Post einfügen
+    updateGeneratedPost(updatedSourceInfo);
+  };
+
+  // Generiert einen aktualisierten Post basierend auf den geänderten Quellinformationen
+  const updateGeneratedPost = (updatedSourceInfo: SourceInfo) => {
+    if (!result) return;
+
+    let newPostContent = result.generatedPost;
+
+    // Ersetze den Hotelnamen (mit Vorsicht, um nicht nach Teilwörtern zu ersetzen)
+    const originalHotelName = result.sourceInfo.hotelName;
+    const newHotelName = updatedSourceInfo.hotelName;
+    
+    if (originalHotelName !== newHotelName) {
+      // Ersetze den Hotelnamen mit Wortgrenzenerkennung
+      newPostContent = newPostContent.replace(
+        new RegExp(`\\b${originalHotelName}\\b`, 'g'), 
+        newHotelName
+      );
+    }
+
+    // Ersetze die Hotelkategorie
+    if (result.sourceInfo.hotelCategory !== updatedSourceInfo.hotelCategory && 
+        result.sourceInfo.hotelCategory && updatedSourceInfo.hotelCategory) {
+      newPostContent = newPostContent.replace(
+        result.sourceInfo.hotelCategory,
+        updatedSourceInfo.hotelCategory
+      );
+    }
+
+    // Ersetze die Destination
+    if (result.sourceInfo.destination !== updatedSourceInfo.destination) {
+      newPostContent = newPostContent.replace(
+        new RegExp(`\\b${result.sourceInfo.destination}\\b`, 'g'),
+        updatedSourceInfo.destination
+      );
+    }
+
+    // Ersetze Features
+    updatedSourceInfo.featuresWithIcons.forEach((feature, index) => {
+      if (index < result.sourceInfo.featuresWithIcons.length) {
+        const originalFeature = result.sourceInfo.featuresWithIcons[index].text;
+        
+        if (originalFeature !== feature.text) {
+          newPostContent = newPostContent.replace(
+            originalFeature,
+            feature.text
+          );
+        }
+      }
+    });
+
+    // Aktualisiere den generierten Post
+    setUpdatedPost(newPostContent);
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(generatePostSchema),
@@ -198,8 +280,14 @@ export default function Home() {
           {status === "loading" && <LoadingState />}
           {status === "success" && result && (
             <>
-              <PostResult postContent={result.generatedPost} />
-              <SourceInformation sourceInfo={result.sourceInfo} />
+              <PostResult 
+                postContent={result.generatedPost} 
+                updatedContent={updatedPost}
+              />
+              <SourceInformation 
+                sourceInfo={result.sourceInfo} 
+                onUpdateInfo={handleSourceInfoUpdate} 
+              />
             </>
           )}
         </div>
